@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101114">
+  <meta name="description" content="VAULT — collect artifacts, complete challenges, build your legacy.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/vault.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>VAULT — Build your legacy</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="VAULT home"><span class="brand-mark">V</span><span>VAULT</span></a>
+      <div class="top-actions">
+        <span class="level-chip" id="levelChip">LEVEL 1</span>
+        <button class="icon-button" id="languageButton" aria-label="Switch language">FR</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="view active" id="homeView">
+        <div class="hero panel">
+          <div class="hero-copy">
+            <p class="eyebrow" data-i18n="season">SEASON 01 · THE FIRST ARCHIVE</p>
+            <h1 data-i18n="heroTitle">Your legacy<br><em>starts here.</em></h1>
+            <p class="muted" data-i18n="heroText">Discover artifacts. Master challenges. Build a collection worth remembering.</p>
+            <button class="primary-button" data-go="challenge" data-i18n="startChallenge">Start today's challenge <span>↗</span></button>
+          </div>
+          <div class="vault-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="vault-door"><div class="vault-ring"></div><div class="vault-core">V</div><i></i></div><span class="art-caption">EST. MMXXVI</span></div>
+        </div>
+
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="overview">OVERVIEW</p><h2 data-i18n="yourProgress">Your progress</h2></div><span class="muted small" id="streakLabel">0 challenges completed</span></div>
+        <div class="stats-grid">
+          <article class="stat-card panel"><span class="stat-icon">✧</span><span class="stat-value" id="xpValue">0</span><span class="stat-label">XP</span></article>
+          <article class="stat-card panel"><span class="stat-icon">◇</span><span class="stat-value" id="artifactValue">0/10</span><span class="stat-label" data-i18n="artifacts">ARTIFACTS</span></article>
+          <article class="stat-card panel"><span class="stat-icon">⌁</span><span class="stat-value" id="collectionValue">0%</span><span class="stat-label" data-i18n="complete">COMPLETE</span></article>
+        </div>
+
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="featured">FEATURED</p><h2 data-i18n="featuredArtifact">Featured artifact</h2></div><button class="text-button" data-go="collection" data-i18n="viewAll">View all ↗</button></div>
+        <article class="featured-card panel"><div class="artifact-symbol large">✥</div><div class="featured-info"><span class="rarity rare" data-i18n="rare">RARE</span><h3 id="featuredName">The Astral Compass</h3><p class="muted" data-i18n="featuredDescription">A relic said to point toward forgotten places.</p></div><span class="lock-mark" id="featuredLock">⌑</span></article>
+      </section>
+
+      <section class="view" id="collectionView">
+        <div class="page-intro"><p class="eyebrow" data-i18n="theArchive">THE ARCHIVE</p><h1 data-i18n="collectionTitle">Your collection</h1><p class="muted" data-i18n="collectionText">Ten artifacts. One archive. Every discovery is earned.</p></div>
+        <div class="collection-progress panel"><div class="progress-top"><span data-i18n="archiveProgress">ARCHIVE PROGRESS</span><strong id="collectionProgressText">0 / 10</strong></div><div class="progress-track"><span id="collectionProgressBar"></span></div></div>
+        <div class="artifact-grid" id="artifactGrid"></div>
+      </section>
+
+      <section class="view" id="challengeView">
+        <div class="page-intro"><p class="eyebrow" data-i18n="dailyTrial">DAILY TRIAL</p><h1 data-i18n="challengeTitle">The daily challenge</h1><p class="muted" data-i18n="challengeText">Solve the puzzle to earn XP. One completed challenge per day.</p></div>
+        <article class="challenge-card panel">
+          <div class="challenge-top"><span class="challenge-type" data-i18n="logicTrial">LOGIC TRIAL</span><span class="xp-reward">+50 XP</span></div>
+          <div class="puzzle-symbol">⌘</div>
+          <p class="eyebrow" data-i18n="yourQuestion">YOUR QUESTION</p>
+          <h2 id="questionText">Which number comes next?</h2>
+          <div class="answer-grid" id="answerGrid"></div>
+          <p class="feedback" id="feedback" aria-live="polite"></p>
+          <button class="primary-button full-width" id="submitAnswer" data-i18n="checkAnswer">Check answer</button>
+          <p class="small muted challenge-foot" id="challengeFoot"></p>
+        </article>
+        <p class="small muted centered" data-i18n="fairPlay">Fair play: the answer and reward are fixed. No paid chance mechanics.</p>
+      </section>
+
+      <section class="view" id="profileView">
+        <div class="page-intro"><p class="eyebrow" data-i18n="identity">IDENTITY</p><h1 data-i18n="yourProfile">Your profile</h1><p class="muted" data-i18n="profileText">Your progress is saved on this device.</p></div>
+        <article class="profile-card panel"><div class="avatar">V</div><div><h2 data-i18n="archivist">New Archivist</h2><p class="muted small" data-i18n="foundingMember">FOUNDING MEMBER · SEASON 01</p></div><span class="level-badge" id="profileLevel">01</span></article>
+        <article class="panel profile-progress"><div class="progress-top"><span data-i18n="nextLevel">NEXT LEVEL</span><strong id="levelProgressText">0 / 100 XP</strong></div><div class="progress-track"><span id="levelProgressBar"></span></div></article>
+        <article class="panel settings-card"><div><h3 data-i18n="yourData">Your data</h3><p class="muted small" data-i18n="dataText">This prototype stores progress locally in your browser. No account or server is connected.</p></div><button class="secondary-button" id="resetButton" data-i18n="resetProgress">Reset progress</button></article>
+        <p class="tiny muted centered">VAULT MVP 0.1 · A COLLECTION GAME</p>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <button class="nav-item active" data-tab="home"><span>⌂</span><small data-i18n="navHome">Home</small></button>
+      <button class="nav-item" data-tab="collection"><span>◇</span><small data-i18n="navCollection">Archive</small></button>
+      <button class="nav-item challenge-nav" data-tab="challenge"><span>✧</span><small data-i18n="navChallenge">Challenge</small></button>
+      <button class="nav-item" data-tab="profile"><span>◉</span><small data-i18n="navProfile">Profile</small></button>
+    </nav>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
