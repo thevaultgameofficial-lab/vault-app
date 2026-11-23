@@ -33,3 +33,548 @@ function go(tab){document.querySelectorAll('.view').forEach(v=>v.classList.remov
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab)));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));document.getElementById('submitAnswer').addEventListener('click',completeChallenge);document.getElementById('languageButton').addEventListener('click',()=>{language=language==='en'?'fr':'en';state.language=language;selectedAnswer=null;document.getElementById('feedback').textContent='';document.getElementById('feedback').className='feedback';saveState();render()});document.getElementById('resetButton').addEventListener('click',()=>{if(confirm(t('resetConfirm'))){state=freshState();state.language=language;selectedAnswer=null;saveState();render();showToast(t('resetDone'))}});
 render();
 if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+
+/* =========================================
+   VAULT — DEVELOPER EDITION 0.2
+========================================= */
+
+(() => {
+  const DEV = {
+    enabled: true,
+    logs: [],
+    panel: null
+  };
+
+  const devText = {
+    en: {
+      title: "DEVELOPER CONSOLE",
+      subtitle: "VAULT SYSTEM CONTROL",
+      xp: "EXPERIENCE CONTROL",
+      add: "ADD XP",
+      remove: "REMOVE XP",
+      amount: "XP amount",
+      inventory: "ARTIFACT CONTROL",
+      artifact: "Select artifact",
+      unlock: "UNLOCK ARTIFACT",
+      lock: "LOCK ARTIFACT",
+      tests: "TEST ENVIRONMENT",
+      reward: "SIMULATE +50 XP",
+      clearDay: "RESET DAILY CHALLENGE",
+      data: "DATA INSPECTOR",
+      refresh: "REFRESH DATA",
+      copy: "COPY SAVE DATA",
+      reset: "RESET ALL PROGRESS",
+      close: "CLOSE CONSOLE",
+      logs: "SYSTEM LOG",
+      success: "Operation completed",
+      confirm: "Are you sure?",
+      copied: "Save data copied"
+    },
+    fr: {
+      title: "CONSOLE DÉVELOPPEUR",
+      subtitle: "CONTRÔLE DU SYSTÈME VAULT",
+      xp: "GESTION DE L'EXPÉRIENCE",
+      add: "AJOUTER DES XP",
+      remove: "RETIRER DES XP",
+      amount: "Quantité de XP",
+      inventory: "GESTION DES ARTEFACTS",
+      artifact: "Sélectionner un artefact",
+      unlock: "DÉBLOQUER",
+      lock: "VERROUILLER",
+      tests: "ENVIRONNEMENT DE TEST",
+      reward: "SIMULER +50 XP",
+      clearDay: "RÉINITIALISER LE DÉFI DU JOUR",
+      data: "INSPECTEUR DE DONNÉES",
+      refresh: "ACTUALISER",
+      copy: "COPIER LA SAUVEGARDE",
+      reset: "RÉINITIALISER TOUTE LA PARTIE",
+      close: "FERMER LA CONSOLE",
+      logs: "JOURNAL SYSTÈME",
+      success: "Opération effectuée",
+      confirm: "Êtes-vous sûr ?",
+      copied: "Sauvegarde copiée"
+    }
+  };
+
+  const tx = key => devText[language][key] || key;
+
+  function log(message) {
+    DEV.logs.unshift({
+      time: new Date().toLocaleTimeString(),
+      message
+    });
+
+    DEV.logs = DEV.logs.slice(0, 30);
+
+    const area = document.getElementById("devLogs");
+
+    if (area) {
+      area.innerHTML = DEV.logs.map(item =>
+        `<div class="dev-log-line">
+          <span>${item.time}</span> ${item.message}
+        </div>`
+      ).join("");
+    }
+  }
+
+  function addStyles() {
+    if (document.getElementById("vaultDevStyles")) return;
+
+    const style = document.createElement("style");
+    style.id = "vaultDevStyles";
+
+    style.textContent = `
+      #vaultDevButton {
+        position: fixed;
+        bottom: 22px;
+        right: 22px;
+        z-index: 9000;
+        background: #171c2b;
+        color: #b7a5ff;
+        border: 1px solid #6654a8;
+        border-radius: 10px;
+        padding: 11px 16px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        cursor: pointer;
+        box-shadow: 0 8px 30px #0008;
+      }
+
+      #vaultDevOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background: rgba(3,5,12,.88);
+        backdrop-filter: blur(12px);
+      }
+
+      #vaultDevOverlay.active {
+        display: flex;
+      }
+
+      #vaultDevPanel {
+        width: min(760px, 100%);
+        max-height: 90vh;
+        overflow-y: auto;
+        background: #101522;
+        color: #f2f3fa;
+        border: 1px solid #343d54;
+        border-radius: 18px;
+        padding: 25px;
+        box-shadow: 0 25px 100px #000b;
+        font-family: inherit;
+      }
+
+      .dev-header {
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:15px;
+        margin-bottom:24px;
+      }
+
+      .dev-header h2 {
+        font-size:20px;
+        letter-spacing:2px;
+        margin:0;
+      }
+
+      .dev-subtitle {
+        color:#929db5;
+        font-size:10px;
+        letter-spacing:2px;
+        margin-top:7px;
+      }
+
+      .dev-status {
+        color:#77e6b0;
+        font-size:10px;
+        letter-spacing:1px;
+      }
+
+      .dev-section {
+        background:#171f30;
+        border:1px solid #2d374c;
+        border-radius:12px;
+        padding:17px;
+        margin-bottom:13px;
+      }
+
+      .dev-section h3 {
+        color:#b7a5ff;
+        font-size:11px;
+        letter-spacing:1.5px;
+        margin:0 0 15px;
+      }
+
+      .dev-row {
+        display:flex;
+        flex-wrap:wrap;
+        gap:9px;
+        margin-bottom:10px;
+      }
+
+      .dev-row:last-child { margin-bottom:0; }
+
+      .dev-input, .dev-select {
+        min-width:0;
+        flex:1;
+        padding:11px;
+        background:#0c1220;
+        border:1px solid #3a4660;
+        border-radius:7px;
+        color:white;
+      }
+
+      .dev-action {
+        padding:11px 14px;
+        border-radius:7px;
+        border:1px solid #6654a8;
+        background:#30264f;
+        color:white;
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:.6px;
+        cursor:pointer;
+      }
+
+      .dev-action:hover {
+        background:#493875;
+      }
+
+      .dev-action.danger {
+        background:#40212c;
+        border-color:#854052;
+      }
+
+      .dev-data {
+        white-space:pre-wrap;
+        overflow-wrap:anywhere;
+        max-height:180px;
+        overflow:auto;
+        background:#090e18;
+        padding:12px;
+        border-radius:8px;
+        color:#a9bdd8;
+        font-size:11px;
+      }
+
+      .dev-log-line {
+        padding:5px 0;
+        border-bottom:1px solid #293246;
+        color:#c6d1e5;
+        font-size:11px;
+      }
+
+      .dev-log-line span {
+        color:#8794ac;
+        margin-right:8px;
+      }
+
+      @media(max-width:500px) {
+        #vaultDevPanel { padding:16px; }
+        .dev-row { flex-direction:column; }
+        .dev-action { width:100%; }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function createConsole() {
+    if (document.getElementById("vaultDevOverlay")) return;
+
+    const button = document.createElement("button");
+    button.id = "vaultDevButton";
+    button.textContent = "⚙ DEV MODE";
+    button.addEventListener("click", openConsole);
+    document.body.appendChild(button);
+
+    const overlay = document.createElement("div");
+    overlay.id = "vaultDevOverlay";
+
+    overlay.innerHTML = `
+      <div id="vaultDevPanel">
+
+        <div class="dev-header">
+          <div>
+            <h2 id="devTitle"></h2>
+            <div class="dev-subtitle">${tx("subtitle")}</div>
+          </div>
+          <span class="dev-status">● SYSTEM ONLINE</span>
+        </div>
+
+        <div class="dev-section">
+          <h3>${tx("xp")}</h3>
+          <div class="dev-row">
+            <input id="devXpAmount" class="dev-input"
+              type="number" min="1" value="50">
+            <button class="dev-action" id="devAddXp">${tx("add")}</button>
+            <button class="dev-action danger" id="devRemoveXp">${tx("remove")}</button>
+          </div>
+        </div>
+
+        <div class="dev-section">
+          <h3>${tx("inventory")}</h3>
+          <div class="dev-row">
+            <select id="devArtifact" class="dev-select"></select>
+            <button class="dev-action" id="devUnlock">${tx("unlock")}</button>
+            <button class="dev-action danger" id="devLock">${tx("lock")}</button>
+          </div>
+        </div>
+
+        <div class="dev-section">
+          <h3>${tx("tests")}</h3>
+          <div class="dev-row">
+            <button class="dev-action" id="devReward">${tx("reward")}</button>
+            <button class="dev-action" id="devClearDay">${tx("clearDay")}</button>
+          </div>
+        </div>
+
+        <div class="dev-section">
+          <h3>${tx("data")}</h3>
+          <div class="dev-row">
+            <button class="dev-action" id="devRefresh">${tx("refresh")}</button>
+            <button class="dev-action" id="devCopy">${tx("copy")}</button>
+          </div>
+          <pre class="dev-data" id="devData"></pre>
+        </div>
+
+        <div class="dev-section">
+          <h3>${tx("logs")}</h3>
+          <div id="devLogs"></div>
+        </div>
+
+        <div class="dev-row">
+          <button class="dev-action danger" id="devReset">${tx("reset")}</button>
+          <button class="dev-action" id="devClose">${tx("close")}</button>
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById("devClose").onclick = closeConsole;
+
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) closeConsole();
+    });
+
+    document.getElementById("devAddXp").onclick = () => {
+      const amount = Math.floor(Number(
+        document.getElementById("devXpAmount").value
+      ));
+
+      if (!Number.isFinite(amount) || amount < 1) return;
+
+      const previous = level();
+      state.xp += amount;
+      unlockEligibleArtifacts();
+      saveState();
+      render();
+      log(`+${amount} XP`);
+      if (level() > previous) log("LEVEL UP");
+      refreshData();
+    };
+
+    document.getElementById("devRemoveXp").onclick = () => {
+      const amount = Math.floor(Number(
+        document.getElementById("devXpAmount").value
+      ));
+
+      if (!Number.isFinite(amount) || amount < 1) return;
+
+      state.xp = Math.max(0, state.xp - amount);
+      saveState();
+      render();
+      log(`-${amount} XP`);
+      refreshData();
+    };
+
+    document.getElementById("devUnlock").onclick = () => {
+      const id = document.getElementById("devArtifact").value;
+
+      if (!state.unlocked.includes(id)) {
+        state.unlocked.push(id);
+        saveState();
+        render();
+        log(`ARTIFACT UNLOCKED: ${id}`);
+      }
+
+      refreshData();
+    };
+
+    document.getElementById("devLock").onclick = () => {
+      const id = document.getElementById("devArtifact").value;
+
+      if (id === "coin") {
+        log("BASE ARTIFACT CANNOT BE LOCKED");
+        return;
+      }
+
+      state.unlocked = state.unlocked.filter(item => item !== id);
+      saveState();
+      render();
+      log(`ARTIFACT LOCKED: ${id}`);
+      refreshData();
+    };
+
+    document.getElementById("devReward").onclick = () => {
+      state.xp += 50;
+      unlockEligibleArtifacts();
+      saveState();
+      render();
+      log("TEST REWARD: +50 XP");
+      refreshData();
+    };
+
+    document.getElementById("devClearDay").onclick = () => {
+      state.completedDays = state.completedDays.filter(
+        day => day !== todayKey()
+      );
+
+      saveState();
+      render();
+      log("TODAY'S CHALLENGE RESET");
+      refreshData();
+    };
+
+    document.getElementById("devRefresh").onclick = refreshData;
+
+    document.getElementById("devCopy").onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(
+          JSON.stringify(state, null, 2)
+        );
+        log(tx("copied"));
+      } catch {
+        log("CLIPBOARD ACCESS DENIED");
+      }
+    };
+
+    document.getElementById("devReset").onclick = () => {
+      if (!confirm(t("resetConfirm"))) return;
+
+      state = freshState();
+      state.language = language;
+      selectedAnswer = null;
+      saveState();
+      render();
+      log("SAVE RESET");
+      refreshData();
+    };
+
+    populateArtifactSelect();
+    refreshData();
+    log("DEVELOPER CONSOLE INITIALIZED");
+  }
+
+  function unlockEligibleArtifacts() {
+    ARTIFACTS.forEach(artifact => {
+      if (
+        state.xp >= artifact.xp &&
+        !state.unlocked.includes(artifact.id)
+      ) {
+        state.unlocked.push(artifact.id);
+        log(`AUTO UNLOCK: ${artifact.id}`);
+      }
+    });
+  }
+
+  function populateArtifactSelect() {
+    const select = document.getElementById("devArtifact");
+    if (!select) return;
+
+    select.innerHTML = "";
+
+    ARTIFACTS.forEach(artifact => {
+      const option = document.createElement("option");
+      option.value = artifact.id;
+      option.textContent = artifact.name[language];
+      select.appendChild(option);
+    });
+  }
+
+  function refreshData() {
+    const area = document.getElementById("devData");
+    if (!area) return;
+
+    area.textContent = JSON.stringify({
+      storageKey: STORAGE_KEY,
+      xp: state.xp,
+      level: level(),
+      unlockedArtifacts: state.unlocked,
+      completedDays: state.completedDays,
+      language: language,
+      artifactCount: state.unlocked.length,
+      saved: Boolean(localStorage.getItem(STORAGE_KEY))
+    }, null, 2);
+
+    const logs = document.getElementById("devLogs");
+
+    if (logs) {
+      logs.innerHTML = DEV.logs.map(item =>
+        `<div class="dev-log-line">
+          <span>${item.time}</span>${item.message}
+        </div>`
+      ).join("");
+    }
+  }
+
+  function openConsole() {
+    document.getElementById("vaultDevOverlay")
+      .classList.add("active");
+    refreshData();
+  }
+
+  function closeConsole() {
+    document.getElementById("vaultDevOverlay")
+      .classList.remove("active");
+  }
+
+  // Raccourci : CTRL + SHIFT + D
+  document.addEventListener("keydown", event => {
+    if (event.ctrlKey && event.shiftKey &&
+        event.key.toLowerCase() === "d") {
+      event.preventDefault();
+      openConsole();
+    }
+
+    if (event.key === "Escape") closeConsole();
+  });
+
+  function init() {
+    addStyles();
+    createConsole();
+  }
+
+  init();
+
+  // Permet de rafraîchir les libellés après changement de langue.
+  const originalRender = render;
+
+  render = function() {
+    originalRender();
+
+    const title = document.getElementById("devTitle");
+    if (title) title.textContent = tx("title");
+
+    const overlay = document.getElementById("vaultDevOverlay");
+
+    if (overlay) {
+      overlay.querySelectorAll("[data-dev-label]").forEach(el => {
+        el.textContent = tx(el.dataset.devLabel);
+      });
+    }
+
+    populateArtifactSelect();
+    refreshData();
+  };
+
+})();
