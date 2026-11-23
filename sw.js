@@ -1,4 +1,4 @@
-const CACHE = 'vault-mvp-011';
+const CACHE = 'vault-mvp-012';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,11 +11,11 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await cache.addAll(APP_SHELL);
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {
@@ -34,10 +34,11 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // HTML: network-first so users receive the newest published app; cached copy works offline.
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, {cache: 'no-cache'});
         if (response && response.ok) {
           const cache = await caches.open(CACHE);
           await cache.put('./index.html', response.clone());
@@ -50,18 +51,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // App assets: network-first for updates, cache fallback when offline.
   event.respondWith((async () => {
-    const cached = await caches.match(request);
-    if (cached) return cached;
+    const cache = await caches.open(CACHE);
     try {
-      const response = await fetch(request);
-      if (response && response.ok) {
-        const cache = await caches.open(CACHE);
-        await cache.put(request, response.clone());
-      }
+      const response = await fetch(request, {cache: 'no-cache'});
+      if (response && response.ok) await cache.put(request, response.clone());
       return response;
     } catch {
-      return Response.error();
+      return (await caches.match(request)) || (await caches.match(new URL(request.url).pathname.split('/').pop())) || Response.error();
     }
   })());
 });
