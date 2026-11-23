@@ -578,3 +578,441 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
   };
 
 })();
+
+
+/* =========================================
+   VAULT — DEVELOPER EDITION 0.3
+   CHALLENGE EDITOR
+========================================= */
+
+(() => {
+  const EDITOR_KEY = "vault_custom_challenge_01";
+
+  const originalQuestion = JSON.parse(JSON.stringify(QUESTION));
+
+  function loadCustomQuestion() {
+    try {
+      const saved = localStorage.getItem(EDITOR_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  let customQuestion = loadCustomQuestion();
+
+  function activeQuestion() {
+    return customQuestion || QUESTION;
+  }
+
+  function editorText(fr, en) {
+    return language === "fr" ? fr : en;
+  }
+
+  function addEditorStyles() {
+    if (document.getElementById("vaultEditorStyles")) return;
+
+    const style = document.createElement("style");
+    style.id = "vaultEditorStyles";
+    style.textContent = `
+      .vault-editor-field {
+        display:flex;
+        flex-direction:column;
+        gap:6px;
+        margin-bottom:12px;
+        color:#aebbd2;
+        font-size:11px;
+        font-weight:700;
+        letter-spacing:.5px;
+      }
+      .vault-editor-field input,
+      .vault-editor-field select {
+        width:100%;
+        box-sizing:border-box;
+        padding:11px;
+        background:#0c1220;
+        border:1px solid #3a4660;
+        border-radius:7px;
+        color:white;
+        font-size:13px;
+      }
+      .vault-editor-grid {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+      .vault-editor-note {
+        color:#929db5;
+        font-size:11px;
+        line-height:1.5;
+        margin-bottom:14px;
+      }
+      @media(max-width:500px) {
+        .vault-editor-grid { grid-template-columns:1fr; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function createEditor() {
+    const panel = document.getElementById("vaultDevPanel");
+    if (!panel || document.getElementById("vaultChallengeEditor")) return;
+
+    const section = document.createElement("div");
+    section.className = "dev-section";
+    section.id = "vaultChallengeEditor";
+
+    section.innerHTML = `
+      <h3 id="editorHeading"></h3>
+      <p class="vault-editor-note" id="editorDescription"></p>
+
+      <div class="vault-editor-field">
+        <label id="editorQuestionFrLabel"></label>
+        <input id="editorQuestionFr" maxlength="180">
+      </div>
+
+      <div class="vault-editor-field">
+        <label id="editorQuestionEnLabel"></label>
+        <input id="editorQuestionEn" maxlength="180">
+      </div>
+
+      <div class="vault-editor-field">
+        <label id="editorRuleFrLabel"></label>
+        <input id="editorRuleFr" maxlength="220">
+      </div>
+
+      <div class="vault-editor-field">
+        <label id="editorRuleEnLabel"></label>
+        <input id="editorRuleEn" maxlength="220">
+      </div>
+
+      <div class="vault-editor-field">
+        <label id="editorSequenceLabel"></label>
+        <div class="vault-editor-grid">
+          <input id="editorSeq0" type="text" maxlength="12">
+          <input id="editorSeq1" type="text" maxlength="12">
+          <input id="editorSeq2" type="text" maxlength="12">
+          <input id="editorSeq3" type="text" maxlength="12">
+        </div>
+      </div>
+
+      <div class="vault-editor-field">
+        <label id="editorAnswersLabel"></label>
+        <div class="vault-editor-grid">
+          <input id="editorAnswer0" maxlength="40">
+          <input id="editorAnswer1" maxlength="40">
+          <input id="editorAnswer2" maxlength="40">
+          <input id="editorAnswer3" maxlength="40">
+        </div>
+      </div>
+
+      <div class="vault-editor-field">
+        <label id="editorCorrectLabel"></label>
+        <select id="editorCorrect">
+          <option value="0">Réponse 1</option>
+          <option value="1">Réponse 2</option>
+          <option value="2">Réponse 3</option>
+          <option value="3">Réponse 4</option>
+        </select>
+      </div>
+
+      <div class="dev-row">
+        <button class="dev-action" id="editorSave"></button>
+        <button class="dev-action" id="editorTest"></button>
+        <button class="dev-action danger" id="editorRestore"></button>
+      </div>
+
+      <div id="editorStatus" class="vault-editor-note"></div>
+    `;
+
+    const dataSection = panel.querySelector("#devData")?.closest(".dev-section");
+
+    if (dataSection) {
+      panel.insertBefore(section, dataSection);
+    } else {
+      panel.appendChild(section);
+    }
+
+    document.getElementById("editorSave").onclick = saveEditor;
+    document.getElementById("editorTest").onclick = testEditor;
+    document.getElementById("editorRestore").onclick = restoreEditor;
+
+    fillEditor();
+    updateEditorLanguage();
+  }
+
+  function fillEditor() {
+    const q = activeQuestion();
+
+    document.getElementById("editorQuestionFr").value = q.fr.q;
+    document.getElementById("editorQuestionEn").value = q.en.q;
+    document.getElementById("editorRuleFr").value = q.fr.rule;
+    document.getElementById("editorRuleEn").value = q.en.rule;
+
+    q.fr.sequence.forEach((v, i) => {
+      document.getElementById("editorSeq" + i).value = v;
+    });
+
+    q.fr.answers.forEach((v, i) => {
+      document.getElementById("editorAnswer" + i).value = v;
+    });
+
+    document.getElementById("editorCorrect").value = String(q.fr.correct);
+  }
+
+  function updateEditorLanguage() {
+    if (!document.getElementById("vaultChallengeEditor")) return;
+
+    const labels = {
+      editorHeading: ["ÉDITEUR DE DÉFIS", "CHALLENGE EDITOR"],
+      editorDescription: [
+        "Crée ou modifie ton défi. Les changements sont enregistrés séparément de ta progression.",
+        "Create or edit your challenge. Changes are saved separately from your progress."
+      ],
+      editorQuestionFrLabel: ["QUESTION EN FRANÇAIS", "QUESTION IN FRENCH"],
+      editorQuestionEnLabel: ["QUESTION EN ANGLAIS", "QUESTION IN ENGLISH"],
+      editorRuleFrLabel: ["INDICE EN FRANÇAIS", "HINT IN FRENCH"],
+      editorRuleEnLabel: ["INDICE EN ANGLAIS", "HINT IN ENGLISH"],
+      editorSequenceLabel: ["SÉQUENCE — 4 NOMBRES", "SEQUENCE — 4 NUMBERS"],
+      editorAnswersLabel: ["LES 4 RÉPONSES", "THE 4 ANSWERS"],
+      editorCorrectLabel: ["NUMÉRO DE LA BONNE RÉPONSE", "CORRECT ANSWER NUMBER"],
+      editorSave: ["ENREGISTRER LE DÉFI", "SAVE CHALLENGE"],
+      editorTest: ["TESTER LE DÉFI", "TEST CHALLENGE"],
+      editorRestore: ["RESTAURER L'ORIGINAL", "RESTORE ORIGINAL"]
+    };
+
+    Object.entries(labels).forEach(([id, values]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = values[language === "fr" ? 0 : 1];
+    });
+
+    const select = document.getElementById("editorCorrect");
+    if (select) {
+      [...select.options].forEach((option, i) => {
+        option.textContent = editorText(
+          "Réponse " + (i + 1),
+          "Answer " + (i + 1)
+        );
+      });
+    }
+  }
+
+  function readEditor() {
+    const value = id => document.getElementById(id).value.trim();
+
+    const question = {
+      fr: {
+        q: value("editorQuestionFr"),
+        rule: value("editorRuleFr"),
+        prompt: "Sélectionnez votre réponse :",
+        sequence: [0, 1, 2, 3].map(i => value("editorSeq" + i)),
+        answers: [0, 1, 2, 3].map(i => value("editorAnswer" + i)),
+        correct: Number(value("editorCorrect"))
+      },
+      en: {
+        q: value("editorQuestionEn"),
+        rule: value("editorRuleEn"),
+        prompt: "Select your answer:",
+        sequence: [0, 1, 2, 3].map(i => value("editorSeq" + i)),
+        answers: [0, 1, 2, 3].map(i => value("editorAnswer" + i)),
+        correct: Number(value("editorCorrect"))
+      }
+    };
+
+    const allText = [
+      question.fr.q,
+      question.en.q,
+      question.fr.rule,
+      question.en.rule,
+      ...question.fr.sequence,
+      ...question.fr.answers
+    ];
+
+    if (allText.some(v => !v)) {
+      throw new Error(editorText(
+        "Tous les champs doivent être remplis.",
+        "All fields must be completed."
+      ));
+    }
+
+    if (
+      question.fr.sequence.length !== 4 ||
+      question.fr.answers.length !== 4 ||
+      question.fr.correct < 0 ||
+      question.fr.correct > 3
+    ) {
+      throw new Error("Invalid challenge.");
+    }
+
+    return question;
+  }
+
+  function saveEditor() {
+    try {
+      customQuestion = readEditor();
+      localStorage.setItem(EDITOR_KEY, JSON.stringify(customQuestion));
+
+      document.getElementById("editorStatus").textContent =
+        editorText("✓ Défi enregistré.", "✓ Challenge saved.");
+
+      renderChallenge();
+    } catch (error) {
+      document.getElementById("editorStatus").textContent = error.message;
+    }
+  }
+
+  function testEditor() {
+    try {
+      customQuestion = readEditor();
+      localStorage.setItem(EDITOR_KEY, JSON.stringify(customQuestion));
+
+      selectedAnswer = null;
+      document.getElementById("feedback").textContent = "";
+
+      renderChallenge();
+      closeConsole();
+      go("challenge");
+
+      showToast(editorText(
+        "Défi de test chargé.",
+        "Test challenge loaded."
+      ));
+    } catch (error) {
+      document.getElementById("editorStatus").textContent = error.message;
+    }
+  }
+
+  function restoreEditor() {
+    if (!confirm(editorText(
+      "Restaurer le défi original ?",
+      "Restore the original challenge?"
+    ))) return;
+
+    customQuestion = null;
+    localStorage.removeItem(EDITOR_KEY);
+
+    fillEditor();
+    renderChallenge();
+
+    document.getElementById("editorStatus").textContent =
+      editorText("Défi original restauré.", "Original challenge restored.");
+  }
+
+  // Le jeu utilise désormais le défi personnalisé s'il existe.
+  renderChallenge = function() {
+    const done = state.completedDays.includes(todayKey());
+    const q = activeQuestion()[language];
+
+    document.getElementById("questionText").textContent = q.q;
+    document.getElementById("sequenceRule").textContent = q.rule;
+    document.getElementById("answerPrompt").textContent = q.prompt;
+
+    const sequence = document.getElementById("numberSequence");
+    sequence.innerHTML = "";
+
+    q.sequence.forEach((number, index) => {
+      const span = document.createElement("span");
+      span.textContent = number;
+      sequence.appendChild(span);
+
+      const arrow = document.createElement("i");
+      arrow.textContent = "→";
+      sequence.appendChild(arrow);
+    });
+
+    const questionMark = document.createElement("strong");
+    questionMark.textContent = "?";
+    sequence.appendChild(questionMark);
+
+    const grid = document.getElementById("answerGrid");
+    grid.innerHTML = "";
+
+    q.answers.forEach((answer, index) => {
+      const button = document.createElement("button");
+      button.className =
+        "answer-option" + (selectedAnswer === index ? " selected" : "");
+      button.textContent = answer;
+      button.disabled = done;
+
+      button.addEventListener("click", () => {
+        selectedAnswer = index;
+        renderChallenge();
+      });
+
+      grid.appendChild(button);
+    });
+
+    document.getElementById("submitAnswer").disabled = done;
+    document.getElementById("submitAnswer").style.opacity = done ? ".5" : "1";
+
+    document.getElementById("challengeFoot").textContent =
+      done ? t("challengeDone") :
+      "+50 XP · " + (language === "fr"
+        ? "Une seule validation par jour"
+        : "One completion per day");
+
+    const feedback = document.getElementById("feedback");
+
+    if (done) {
+      feedback.textContent = t("alreadyDone");
+      feedback.className = "feedback";
+    } else if (!feedback.classList.contains("error")) {
+      feedback.textContent = "";
+      feedback.className = "feedback";
+    }
+  };
+
+  // La validation compare avec la bonne réponse du défi actif.
+  completeChallenge = function() {
+    if (state.completedDays.includes(todayKey())) {
+      showToast(t("alreadyDone"));
+      return;
+    }
+
+    if (selectedAnswer === null) {
+      showToast(t("choose"));
+      return;
+    }
+
+    if (selectedAnswer !== activeQuestion()[language].correct) {
+      const feedback = document.getElementById("feedback");
+      feedback.textContent = t("wrong");
+      feedback.className = "feedback error";
+      return;
+    }
+
+    const oldLevel = level();
+
+    state.xp += 50;
+    state.completedDays.push(todayKey());
+
+    ARTIFACTS.forEach(artifact => {
+      if (
+        state.xp >= artifact.xp &&
+        !state.unlocked.includes(artifact.id)
+      ) {
+        state.unlocked.push(artifact.id);
+      }
+    });
+
+    saveState();
+    selectedAnswer = null;
+    render();
+
+    showToast(level() > oldLevel ? t("levelUp") : t("correct"));
+  };
+
+  addEditorStyles();
+
+  // La console 0.2 existe déjà : on y insère le nouvel éditeur.
+  createEditor();
+
+  // Actualise les libellés lorsque la langue du jeu change.
+  const previousRender = render;
+
+  render = function() {
+    previousRender();
+    updateEditorLanguage();
+  };
+
+})();
