@@ -170,6 +170,20 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
         font-family: inherit;
       }
 
+        .vault-library-field textarea {
+         width:100%;
+         box-sizing:border-box;
+         padding:11px;
+         background:#0c1220;
+         border:1px solid #3a4660;
+         border-radius:7px;
+         color:white;
+         font-size:13px;
+         font-family:inherit;
+         resize:vertical;
+         line-height:1.5;
+       }
+
       .dev-header {
         display:flex;
         justify-content:space-between;
@@ -747,22 +761,22 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
 
       <div class="vault-library-field">
         <label id="editorQuestionFrLabel"></label>
-        <input id="editorQuestionFr" maxlength="180">
+        <textarea id="editorQuestionFr" maxlength="1000"></textarea>
       </div>
 
       <div class="vault-library-field">
         <label id="editorQuestionEnLabel"></label>
-        <input id="editorQuestionEn" maxlength="180">
+        <textarea id="editorQuestionEn" maxlength="1000"></textarea>
       </div>
 
       <div class="vault-library-field">
         <label id="editorRuleFrLabel"></label>
-        <input id="editorRuleFr" maxlength="220">
+        <textarea id="editorRuleFr" maxlength="600"></textarea>
       </div>
 
       <div class="vault-library-field">
         <label id="editorRuleEnLabel"></label>
-        <input id="editorRuleEn" maxlength="220">
+        <textarea id="editorRuleEn" maxlength="600"></textarea>
       </div>
 
       <div class="vault-library-field">
