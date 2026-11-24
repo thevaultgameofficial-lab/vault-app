@@ -1253,6 +1253,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 
   view.prepend(card);
 
+ 
   document.getElementById("vpSave").onclick=()=>{
    const name=document.getElementById("vpNameInput").value.trim();
 
@@ -1261,13 +1262,28 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     return;
    }
 
+   // Préserver les données du système de titres
+   try{
+    const saved=JSON.parse(localStorage.getItem("vault_mvp_01"))||{};
+
+    if(saved.selectedVaultTitle){
+     state.selectedVaultTitle=saved.selectedVaultTitle;
+    }
+
+    if(saved.vaultTitles){
+     state.vaultTitles=saved.vaultTitles;
+    }
+   }catch(error){}
+
    state.profileName=name.slice(0,24);
    state.avatar=document.getElementById("vpAvatarInput").value;
 
    saveState();
    render();
+
    showToast(language==="fr"?"Profil enregistré.":"Profile saved.");
   };
+
  }
 
 function updateProfile(){
