@@ -1315,3 +1315,279 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
  render();
 })();
 
+
+/* ==========================================
+   VAULT — ACHIEVEMENTS 0.6
+========================================== */
+
+(function () {
+  const STORAGE_KEY = "vault_mvp_01";
+
+  const TROPHIES = [
+    {
+      id: "first_day",
+      icon: "🌱",
+      name: { fr: "Premier pas", en: "First Steps" },
+      desc: { fr: "Terminer ton premier défi.", en: "Complete your first challenge." },
+      goal: 1,
+      getValue: s => (s.completedDays || []).length
+    },
+    {
+      id: "three_days",
+      icon: "🔥",
+      name: { fr: "En route", en: "Getting Started" },
+      desc: { fr: "Terminer 3 défis.", en: "Complete 3 challenges." },
+      goal: 3,
+      getValue: s => (s.completedDays || []).length
+    },
+    {
+      id: "seven_days",
+      icon: "📅",
+      name: { fr: "Une semaine", en: "One Week" },
+      desc: { fr: "Terminer 7 défis.", en: "Complete 7 challenges." },
+      goal: 7,
+      getValue: s => (s.completedDays || []).length
+    },
+    {
+      id: "fourteen_days",
+      icon: "🏅",
+      name: { fr: "Habitué", en: "Regular" },
+      desc: { fr: "Terminer 14 défis.", en: "Complete 14 challenges." },
+      goal: 14,
+      getValue: s => (s.completedDays || []).length
+    },
+    {
+      id: "thirty_days",
+      icon: "👑",
+      name: { fr: "Discipline", en: "Dedicated" },
+      desc: { fr: "Terminer 30 défis.", en: "Complete 30 challenges." },
+      goal: 30,
+      getValue: s => (s.completedDays || []).length
+    },
+    {
+      id: "xp_100",
+      icon: "✨",
+      name: { fr: "Étincelle", en: "Spark" },
+      desc: { fr: "Atteindre 100 XP.", en: "Reach 100 XP." },
+      goal: 100,
+      getValue: s => s.xp || 0
+    },
+    {
+      id: "xp_500",
+      icon: "💎",
+      name: { fr: "Expérimenté", en: "Experienced" },
+      desc: { fr: "Atteindre 500 XP.", en: "Reach 500 XP." },
+      goal: 500,
+      getValue: s => s.xp || 0
+    },
+    {
+      id: "xp_1000",
+      icon: "🌟",
+      name: { fr: "Maître de l'Archive", en: "Master of the Archive" },
+      desc: { fr: "Atteindre 1 000 XP.", en: "Reach 1,000 XP." },
+      goal: 1000,
+      getValue: s => s.xp || 0
+    },
+    {
+      id: "five_artifacts",
+      icon: "🗝️",
+      name: { fr: "Collectionneur", en: "Collector" },
+      desc: { fr: "Débloquer 5 artefacts.", en: "Unlock 5 artifacts." },
+      goal: 5,
+      getValue: s => (s.unlocked || []).length
+    },
+    {
+      id: "all_artifacts",
+      icon: "🏛️",
+      name: { fr: "Archiviste suprême", en: "Grand Archivist" },
+      desc: { fr: "Débloquer les 10 artefacts.", en: "Unlock all 10 artifacts." },
+      goal: 10,
+      getValue: s => (s.unlocked || []).length
+    },
+    {
+      id: "xp_2000",
+      icon: "🌌",
+      name: { fr: "Légende de VAULT", en: "VAULT Legend" },
+      desc: { fr: "Atteindre 2 000 XP.", en: "Reach 2,000 XP." },
+      goal: 2000,
+      getValue: s => s.xp || 0
+    }
+  ];
+
+  function readState() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveAchievements(state, unlocked) {
+    state.achievements = unlocked;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function syncAchievements() {
+    const state = readState();
+    const profile = document.getElementById("profileView");
+
+    if (!state || !profile) return;
+
+    if (!Array.isArray(state.achievements)) {
+      state.achievements = [];
+    }
+
+    const lang = state.language === "fr" ? "fr" : "en";
+    let changed = false;
+
+    TROPHIES.forEach(trophy => {
+      const value = trophy.getValue(state);
+
+      if (value >= trophy.goal &&
+          !state.achievements.includes(trophy.id)) {
+        state.achievements.push(trophy.id);
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      saveAchievements(state, state.achievements);
+    }
+
+    const unlockedCount = state.achievements.length;
+
+    const cards = TROPHIES.map(trophy => {
+      const value = trophy.getValue(state);
+      const unlocked = state.achievements.includes(trophy.id);
+      const progress = Math.min(100, Math.round((value / trophy.goal) * 100));
+
+      return `
+        <div style="
+          display:flex;
+          align-items:center;
+          gap:12px;
+          padding:13px;
+          border:1px solid ${unlocked ? '#8065c9' : 'rgba(255,255,255,.10)'};
+          border-radius:12px;
+          background:${unlocked ? 'rgba(128,101,201,.13)' : 'rgba(255,255,255,.025)'};
+          opacity:${unlocked ? '1' : '.65'};
+        ">
+          <div style="
+            font-size:27px;
+            width:42px;
+            text-align:center;
+            filter:${unlocked ? 'none' : 'grayscale(1)'};
+          ">${trophy.icon}</div>
+
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13px;">
+              ${trophy.name[lang]}
+              ${unlocked ? ' ✓' : ''}
+            </div>
+
+            <div style="font-size:11px;opacity:.7;margin-top:3px;">
+              ${trophy.desc[lang]}
+            </div>
+
+            <div style="
+              height:4px;
+              background:rgba(255,255,255,.12);
+              border-radius:5px;
+              margin-top:8px;
+              overflow:hidden;
+            ">
+              <div style="
+                height:100%;
+                width:${progress}%;
+                background:#9b80e8;
+                border-radius:5px;
+              "></div>
+            </div>
+
+            <div style="font-size:10px;opacity:.55;margin-top:4px;">
+              ${Math.min(value, trophy.goal)} / ${trophy.goal}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const html = `
+      <div style="margin-top:22px;" id="vaultAchievements06">
+        <div style="
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          margin-bottom:13px;
+          gap:10px;
+        ">
+          <div>
+            <div style="font-size:17px;font-weight:800;">
+              🏆 ${lang === "fr" ? "Succès & trophées" : "Achievements"}
+            </div>
+            <div style="font-size:11px;opacity:.6;margin-top:3px;">
+              ${lang === "fr" ? "Ta progression personnelle" : "Your personal progress"}
+            </div>
+          </div>
+
+          <div style="
+            font-size:12px;
+            font-weight:700;
+            padding:7px 11px;
+            border-radius:20px;
+            background:rgba(128,101,201,.2);
+          ">
+            ${unlockedCount} / ${TROPHIES.length}
+          </div>
+        </div>
+
+        <div style="
+          display:grid;
+          grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+          gap:9px;
+        ">
+          ${cards}
+        </div>
+      </div>
+    `;
+
+    let container = document.getElementById("vaultAchievements06");
+
+    if (!container) {
+      profile.insertAdjacentHTML("beforeend", html);
+    } else if (container.outerHTML !== html) {
+      container.outerHTML = html;
+    }
+  }
+
+  // Observe les changements de l'application
+  // pour actualiser les trophées automatiquement.
+  let scheduled = false;
+
+  const observer = new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+
+    requestAnimationFrame(() => {
+      scheduled = false;
+      syncAchievements();
+    });
+  });
+
+  function start() {
+    syncAchievements();
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+
+})();
