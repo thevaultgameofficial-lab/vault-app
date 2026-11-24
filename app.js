@@ -1270,23 +1270,43 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   };
  }
 
- function updateProfile(){
+function updateProfile(){
   if(!document.getElementById(CARD_ID))return;
 
   const name=state.profileName||"Archiviste";
   const avatar=state.avatar||"🗝️";
 
+  let selectedTitleId="archivist";
+
+  try{
+   const saved=JSON.parse(localStorage.getItem("vault_mvp_01"));
+   selectedTitleId=saved?.selectedVaultTitle||"archivist";
+  }catch(error){}
+
+  const titleNames={
+   archivist:{fr:"ARCHIVISTE",en:"ARCHIVIST"},
+   explorer:{fr:"EXPLORATEUR",en:"EXPLORER"},
+   regular:{fr:"HABITUÉ",en:"REGULAR"},
+   veteran:{fr:"VÉTÉRAN",en:"VETERAN"},
+   collector:{fr:"COLLECTIONNEUR",en:"COLLECTOR"},
+   master:{fr:"ARCHIVISTE SUPRÊME",en:"GRAND ARCHIVIST"},
+   experienced:{fr:"ÉRUDIT",en:"SCHOLAR"},
+   guardian:{fr:"GARDIEN DES RELIQUES",en:"RELIC GUARDIAN"}
+  };
+
+  const lang=language==="fr"?"fr":"en";
+  const title=titleNames[selectedTitleId]||titleNames.archivist;
+
   document.getElementById("vpAvatar").textContent=avatar;
   document.getElementById("vpName").textContent=name;
   document.getElementById("vpRank").textContent=
-language==="fr"?"ARCHIVISTE · SAISON 01":"ARCHIVIST · SEASON 01";
-   `${currentTitle[language === "fr" ? "fr" : "en"].toUpperCase()} · ${language==="fr"?"SAISON 01":"SEASON 01"}`;
+   `${title[lang]} · ${lang==="fr"?"SAISON 01":"SEASON 01"}`;
 
   document.getElementById("vpNameInput").value=name;
   document.getElementById("vpAvatarInput").value=avatar;
 
   document.getElementById("vpSave").textContent=
-   language==="fr"?"ENREGISTRER LE PROFIL":"SAVE PROFILE";
+   lang==="fr"?"ENREGISTRER LE PROFIL":"SAVE PROFILE";
 
   document.getElementById("vpXP").textContent=state.xp;
   document.getElementById("vpChallenges").textContent=state.completedDays.length;
@@ -1294,14 +1314,14 @@ language==="fr"?"ARCHIVISTE · SAISON 01":"ARCHIVIST · SEASON 01";
    state.unlocked.length+"/10";
 
   document.getElementById("vpXPLabel").textContent=
-   language==="fr"?"XP TOTAL":"TOTAL XP";
+   lang==="fr"?"XP TOTAL":"TOTAL XP";
 
   document.getElementById("vpChallengeLabel").textContent=
-   language==="fr"?"DÉFIS TERMINÉS":"CHALLENGES";
+   lang==="fr"?"DÉFIS TERMINÉS":"CHALLENGES";
 
   document.getElementById("vpArtifactLabel").textContent=
-   language==="fr"?"ARTEFACTS":"ARTIFACTS";
- }
+   lang==="fr"?"ARTEFACTS":"ARTIFACTS";
+}
 
  addProfileStyles();
  createProfile();
@@ -2038,10 +2058,11 @@ language==="fr"?"ARCHIVISTE · SAISON 01":"ARCHIVIST · SEASON 01";
 
       if (!allowed.includes(choice)) return;
 
-      latest.selectedVaultTitle = choice;
-      saveState(latest);
+    latest.selectedVaultTitle = choice;
+saveState(latest);
 
-      updateTitles();
+updateTitles();
+render();
     });
   }
 
