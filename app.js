@@ -1018,6 +1018,12 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
 
   render = function() {
     previousRender();
+
+    // Réapplique le défi personnalisé après chaque rendu.
+    if (customQuestion) {
+      renderChallenge();
+    }
+
     updateEditorLanguage();
   };
 
