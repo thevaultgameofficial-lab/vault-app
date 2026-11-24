@@ -1864,8 +1864,10 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 })();
 
 
+
 /* ==========================================
-   VAULT — PLAYER TITLES 0.8
+   VAULT — PLAYER TITLES 0.8.2
+   Fixed stable title selector
 ========================================== */
 
 (function () {
@@ -1873,70 +1875,56 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 
   const TITLES = [
     {
-      id: "explorer",
-      icon: "🧭",
-      fr: "Explorateur",
-      en: "Explorer",
+      id: "explorer", icon: "🧭",
+      fr: "Explorateur", en: "Explorer",
       descFr: "Terminer ton premier défi.",
       descEn: "Complete your first challenge.",
       goal: 1,
       value: s => (s.completedDays || []).length
     },
     {
-      id: "regular",
-      icon: "🔥",
-      fr: "Habitué",
-      en: "Regular",
+      id: "regular", icon: "🔥",
+      fr: "Habitué", en: "Regular",
       descFr: "Terminer 5 défis.",
       descEn: "Complete 5 challenges.",
       goal: 5,
       value: s => (s.completedDays || []).length
     },
     {
-      id: "veteran",
-      icon: "⚔️",
-      fr: "Vétéran",
-      en: "Veteran",
+      id: "veteran", icon: "⚔️",
+      fr: "Vétéran", en: "Veteran",
       descFr: "Terminer 10 défis.",
       descEn: "Complete 10 challenges.",
       goal: 10,
       value: s => (s.completedDays || []).length
     },
     {
-      id: "collector",
-      icon: "🗝️",
-      fr: "Collectionneur",
-      en: "Collector",
+      id: "collector", icon: "🗝️",
+      fr: "Collectionneur", en: "Collector",
       descFr: "Débloquer 5 artefacts.",
       descEn: "Unlock 5 artifacts.",
       goal: 5,
       value: s => (s.unlocked || []).length
     },
     {
-      id: "master",
-      icon: "🏛️",
-      fr: "Archiviste suprême",
-      en: "Grand Archivist",
+      id: "master", icon: "🏛️",
+      fr: "Archiviste suprême", en: "Grand Archivist",
       descFr: "Débloquer les 10 artefacts.",
       descEn: "Unlock all 10 artifacts.",
       goal: 10,
       value: s => (s.unlocked || []).length
     },
     {
-      id: "experienced",
-      icon: "💎",
-      fr: "Érudit",
-      en: "Scholar",
+      id: "experienced", icon: "💎",
+      fr: "Érudit", en: "Scholar",
       descFr: "Atteindre 500 XP.",
       descEn: "Reach 500 XP.",
       goal: 500,
       value: s => s.xp || 0
     },
     {
-      id: "guardian",
-      icon: "👑",
-      fr: "Gardien des reliques",
-      en: "Relic Guardian",
+      id: "guardian", icon: "👑",
+      fr: "Gardien des reliques", en: "Relic Guardian",
       descFr: "Obtenir les 5 reliques de la saison 1.",
       descEn: "Collect all 5 Season 1 relics.",
       goal: 5,
@@ -1963,6 +1951,99 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   }
 
+  function getTitle(id) {
+    return id === "archivist"
+      ? DEFAULT_TITLE
+      : TITLES.find(t => t.id === id) || DEFAULT_TITLE;
+  }
+
+  function createPanel(profile) {
+    if (document.getElementById("vaultTitles082")) return;
+
+    profile.insertAdjacentHTML("beforeend", `
+      <div id="vaultTitles082" style="margin-top:24px;">
+        <div style="
+          border:1px solid rgba(161,132,220,.35);
+          border-radius:15px;
+          padding:15px;
+          background:rgba(91,65,145,.10);
+        ">
+          <div style="font-size:17px;font-weight:800;">
+            🎖️ <span id="vaultTitlesHeading082"></span>
+          </div>
+
+          <div id="vaultTitlesDescription082"
+            style="font-size:11px;opacity:.65;margin-top:4px;">
+          </div>
+
+          <div style="
+            text-align:center;
+            padding:17px 10px;
+            margin-top:12px;
+            border-radius:12px;
+            background:rgba(128,101,201,.14);
+          ">
+            <div id="vaultEquippedIcon082" style="font-size:30px;"></div>
+            <div id="vaultEquippedName082"
+              style="font-size:16px;font-weight:800;margin-top:5px;">
+            </div>
+            <div id="vaultEquippedLabel082"
+              style="font-size:10px;opacity:.6;margin-top:4px;">
+            </div>
+          </div>
+
+          <div id="vaultChooseLabel082"
+            style="font-size:12px;font-weight:700;margin-top:15px;">
+          </div>
+
+          <select id="vaultTitleSelect082" style="
+            width:100%;
+            padding:11px;
+            margin-top:7px;
+            border-radius:9px;
+            border:1px solid rgba(161,132,220,.4);
+            background:#211c30;
+            color:white;
+            font-size:13px;
+          "></select>
+
+          <div style="font-size:11px;font-weight:700;margin-top:19px;">
+            <span id="vaultCollectionLabel082"></span>
+            <span id="vaultCollectionCount082"
+              style="opacity:.6;"></span>
+          </div>
+
+          <div id="vaultTitleCards082" style="
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+            gap:8px;
+            margin-top:10px;
+          "></div>
+        </div>
+      </div>
+    `);
+
+    const select = document.getElementById("vaultTitleSelect082");
+
+    select.addEventListener("change", function () {
+      const latest = readState();
+      if (!latest) return;
+
+      const choice = this.value;
+      const allowed = [
+        DEFAULT_TITLE.id,
+        ...(latest.vaultTitles || [])
+      ];
+
+      if (!allowed.includes(choice)) return;
+
+      latest.selectedVaultTitle = choice;
+      saveState(latest);
+
+      updateTitles();
+    });
+  }
+
   function updateTitles() {
     const profile = document.getElementById("profileView");
     const s = readState();
@@ -1986,7 +2067,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     });
 
     if (!s.selectedVaultTitle) {
-      s.selectedVaultTitle = "archivist";
+      s.selectedVaultTitle = DEFAULT_TITLE.id;
       changed = true;
     }
 
@@ -2003,196 +2084,125 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     if (changed) saveState(s);
 
     const lang = s.language === "fr" ? "fr" : "en";
+    const selected = getTitle(s.selectedVaultTitle);
 
-    const selected = s.selectedVaultTitle === "archivist"
-      ? DEFAULT_TITLE
-      : TITLES.find(t => t.id === s.selectedVaultTitle) || DEFAULT_TITLE;
+    createPanel(profile);
 
-    const unlockedCount = s.vaultTitles.length + 1;
+    // Textes du profil
+    document.getElementById("vaultTitlesHeading082").textContent =
+      lang === "fr" ? "Titres de joueur" : "Player Titles";
 
-    const options = [
-      DEFAULT_TITLE,
-      ...TITLES.filter(t => s.vaultTitles.includes(t.id))
-    ].map(title => `
-      <option
-        value="${title.id}"
-        ${s.selectedVaultTitle === title.id ? "selected" : ""}
-      >
-        ${title.icon} ${title[lang]}
-      </option>
-    `).join("");
+    document.getElementById("vaultTitlesDescription082").textContent =
+      lang === "fr"
+        ? "Débloque des titres et choisis celui qui te représente."
+        : "Unlock titles and choose the one that represents you.";
 
-    const cards = TITLES.map(title => {
-      const unlocked = s.vaultTitles.includes(title.id);
-      const value = title.value(s);
-      const progress = Math.min(
-        100,
-        Math.round(value / title.goal * 100)
-      );
+    document.getElementById("vaultEquippedIcon082").textContent =
+      selected.icon;
 
-      return `
-        <div style="
-          display:flex;
-          align-items:center;
-          gap:10px;
-          padding:10px;
-          border:1px solid ${unlocked ? '#8065c9' : 'rgba(255,255,255,.1)'};
-          border-radius:11px;
-          background:${unlocked ? 'rgba(128,101,201,.13)' : 'rgba(255,255,255,.025)'};
-          opacity:${unlocked ? '1' : '.65'};
-        ">
-          <div style="
-            font-size:25px;
-            filter:${unlocked ? 'none' : 'grayscale(1)'};
-          ">${title.icon}</div>
+    document.getElementById("vaultEquippedName082").textContent =
+      selected[lang];
 
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:700;">
-              ${title[lang]} ${unlocked ? "✓" : ""}
-            </div>
-            <div style="font-size:10px;opacity:.65;margin-top:3px;">
-              ${lang === "fr" ? title.descFr : title.descEn}
-            </div>
-            ${!unlocked ? `
-              <div style="
-                height:4px;
-                background:rgba(255,255,255,.12);
-                border-radius:5px;
-                margin-top:7px;
-                overflow:hidden;
-              ">
-                <div style="
-                  width:${progress}%;
-                  height:100%;
-                  background:#9b80e8;
-                "></div>
-              </div>
-              <div style="font-size:9px;opacity:.5;margin-top:3px;">
-                ${Math.min(value, title.goal)} / ${title.goal}
-              </div>
-            ` : ""}
-          </div>
-        </div>
-      `;
-    }).join("");
+    document.getElementById("vaultEquippedLabel082").textContent =
+      lang === "fr" ? "TITRE ÉQUIPÉ" : "EQUIPPED TITLE";
 
-    const html = `
-      <div id="vaultTitles08" style="margin-top:24px;">
+    document.getElementById("vaultChooseLabel082").textContent =
+      lang === "fr" ? "Choisir mon titre" : "Choose my title";
 
-        <div style="
-          border:1px solid rgba(161,132,220,.35);
-          border-radius:15px;
-          padding:15px;
-          background:rgba(91,65,145,.10);
-        ">
+    document.getElementById("vaultCollectionLabel082").textContent =
+      lang === "fr" ? "Collection de titres " : "Title Collection ";
 
-          <div style="font-size:17px;font-weight:800;">
-            🎖️ ${lang === "fr" ? "Titres de joueur" : "Player Titles"}
-          </div>
+    document.getElementById("vaultCollectionCount082").textContent =
+      `(${s.vaultTitles.length + 1} / ${TITLES.length + 1})`;
 
-          <div style="font-size:11px;opacity:.65;margin-top:4px;">
-            ${lang === "fr"
-              ? "Débloque des titres et choisis celui qui te représente."
-              : "Unlock titles and choose the one that represents you."}
-          </div>
+    // Menu : ne jamais le remplacer pendant son utilisation
+    const select = document.getElementById("vaultTitleSelect082");
 
-          <div style="
-            text-align:center;
-            padding:17px 10px;
-            margin-top:12px;
-            border-radius:12px;
-            background:rgba(128,101,201,.14);
-          ">
-            <div style="font-size:30px;">${selected.icon}</div>
-            <div style="font-size:16px;font-weight:800;margin-top:5px;">
-              ${selected[lang]}
-            </div>
-            <div style="font-size:10px;opacity:.6;margin-top:4px;">
-              ${lang === "fr" ? "TITRE ÉQUIPÉ" : "EQUIPPED TITLE"}
-            </div>
-          </div>
+    if (document.activeElement !== select) {
+      const options = [
+        DEFAULT_TITLE,
+        ...TITLES.filter(t => s.vaultTitles.includes(t.id))
+      ].map(title => `
+        <option value="${title.id}">
+          ${title.icon} ${title[lang]}
+        </option>
+      `).join("");
 
-          <div style="font-size:12px;font-weight:700;margin-top:15px;">
-            ${lang === "fr" ? "Choisir mon titre" : "Choose my title"}
-          </div>
+      if (select.innerHTML !== options) {
+        select.innerHTML = options;
+      }
 
-          <select id="vaultTitleSelect08" style="
-            width:100%;
-            padding:11px;
-            margin-top:7px;
-            border-radius:9px;
-            border:1px solid rgba(161,132,220,.4);
-            background:#211c30;
-            color:white;
-            font-size:13px;
-          ">
-            ${options}
-          </select>
-
-          <div style="font-size:11px;font-weight:700;margin-top:19px;">
-            ${lang === "fr" ? "Collection de titres" : "Title Collection"}
-            <span style="opacity:.6;">(${unlockedCount} / ${TITLES.length + 1})</span>
-          </div>
-
-          <div style="
-            display:grid;
-            grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
-            gap:8px;
-            margin-top:10px;
-          ">
-            <div style="
-              display:flex;
-              align-items:center;
-              gap:10px;
-              padding:10px;
-              border:1px solid #8065c9;
-              border-radius:11px;
-              background:rgba(128,101,201,.13);
-            ">
-              <div style="font-size:25px;">📜</div>
-              <div style="font-size:12px;font-weight:700;">
-                ${DEFAULT_TITLE[lang]} ✓
-                <div style="font-size:10px;opacity:.6;font-weight:400;">
-                  ${lang === "fr" ? "Titre de départ" : "Starting title"}
-                </div>
-              </div>
-            </div>
-            ${cards}
-          </div>
-
-        </div>
-      </div>
-    `;
-
-    const existing = document.getElementById("vaultTitles08");
-
-    if (!existing) {
-      profile.insertAdjacentHTML("beforeend", html);
-    } else if (existing.outerHTML !== html) {
-      existing.outerHTML = html;
+      select.value = s.selectedVaultTitle;
     }
 
-    const select = document.getElementById("vaultTitleSelect08");
+    // Collection des titres
+    const cards = `
+      <div style="
+        display:flex;align-items:center;gap:10px;padding:10px;
+        border:1px solid #8065c9;border-radius:11px;
+        background:rgba(128,101,201,.13);
+      ">
+        <div style="font-size:25px;">📜</div>
+        <div style="font-size:12px;font-weight:700;">
+          ${DEFAULT_TITLE[lang]} ✓
+          <div style="font-size:10px;opacity:.6;font-weight:400;">
+            ${lang === "fr" ? "Titre de départ" : "Starting title"}
+          </div>
+        </div>
+      </div>
+      ${TITLES.map(title => {
+        const unlocked = s.vaultTitles.includes(title.id);
+        const value = title.value(s);
+        const progress = Math.min(
+          100,
+          Math.round(value / title.goal * 100)
+        );
 
-    if (select && !select.dataset.listenerAttached) {
-      select.dataset.listenerAttached = "true";
+        return `
+          <div style="
+            display:flex;align-items:center;gap:10px;padding:10px;
+            border:1px solid ${unlocked ? '#8065c9' : 'rgba(255,255,255,.1)'};
+            border-radius:11px;
+            background:${unlocked ? 'rgba(128,101,201,.13)' : 'rgba(255,255,255,.025)'};
+            opacity:${unlocked ? '1' : '.65'};
+          ">
+            <div style="
+              font-size:25px;
+              filter:${unlocked ? 'none' : 'grayscale(1)'};
+            ">${title.icon}</div>
 
-      select.addEventListener("change", function () {
-        const latest = readState();
-        if (!latest) return;
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:700;">
+                ${title[lang]} ${unlocked ? "✓" : ""}
+              </div>
+              <div style="font-size:10px;opacity:.65;margin-top:3px;">
+                ${lang === "fr" ? title.descFr : title.descEn}
+              </div>
 
-        const choice = this.value;
-        const allowed = [
-          DEFAULT_TITLE.id,
-          ...(latest.vaultTitles || [])
-        ];
+              ${!unlocked ? `
+                <div style="
+                  height:4px;background:rgba(255,255,255,.12);
+                  border-radius:5px;margin-top:7px;overflow:hidden;
+                ">
+                  <div style="
+                    width:${progress}%;height:100%;
+                    background:#9b80e8;
+                  "></div>
+                </div>
+                <div style="font-size:9px;opacity:.5;margin-top:3px;">
+                  ${Math.min(value, title.goal)} / ${title.goal}
+                </div>
+              ` : ""}
+            </div>
+          </div>
+        `;
+      }).join("")}
+    `;
 
-        if (!allowed.includes(choice)) return;
+    const cardsContainer = document.getElementById("vaultTitleCards082");
 
-        latest.selectedVaultTitle = choice;
-        saveState(latest);
-        updateTitles();
-      });
+    if (cardsContainer.innerHTML !== cards) {
+      cardsContainer.innerHTML = cards;
     }
   }
 
@@ -2224,85 +2234,4 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     start();
   }
 
-})();
-
-
-/* ==========================================
-   VAULT — TITLE SELECT FIX 0.8.1
-========================================== */
-
-(function () {
-  const STORAGE_KEY = "vault_mvp_01";
-
-  function fixTitleSelect() {
-    const select = document.getElementById("vaultTitleSelect08");
-
-    if (!select || select.dataset.fixed081) return;
-
-    select.dataset.fixed081 = "true";
-
-    select.addEventListener("change", function () {
-      try {
-        const state = JSON.parse(
-          localStorage.getItem(STORAGE_KEY)
-        );
-
-        if (!state) return;
-
-        const choice = this.value;
-        const allowed = [
-          "archivist",
-          ...(state.vaultTitles || [])
-        ];
-
-        if (!allowed.includes(choice)) return;
-
-        state.selectedVaultTitle = choice;
-
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(state)
-        );
-
-        const display = document.querySelector(
-          "#vaultTitles08 > div > div:nth-child(2) > div"
-        );
-
-        const titles = {
-          archivist: { fr: "Archiviste", en: "Archivist", icon: "📜" },
-          explorer: { fr: "Explorateur", en: "Explorer", icon: "🧭" },
-          regular: { fr: "Habitué", en: "Regular", icon: "🔥" },
-          veteran: { fr: "Vétéran", en: "Veteran", icon: "⚔️" },
-          collector: { fr: "Collectionneur", en: "Collector", icon: "🗝️" },
-          master: { fr: "Archiviste suprême", en: "Grand Archivist", icon: "🏛️" },
-          experienced: { fr: "Érudit", en: "Scholar", icon: "💎" },
-          guardian: { fr: "Gardien des reliques", en: "Relic Guardian", icon: "👑" }
-        };
-
-        const lang = state.language === "fr" ? "fr" : "en";
-        const title = titles[choice];
-
-        if (display && title) {
-          display.innerHTML = `
-            <div style="font-size:30px;">${title.icon}</div>
-            <div style="font-size:16px;font-weight:800;margin-top:5px;">
-              ${title[lang]}
-            </div>
-            <div style="font-size:10px;opacity:.6;margin-top:4px;">
-              ${lang === "fr" ? "TITRE ÉQUIPÉ" : "EQUIPPED TITLE"}
-            </div>
-          `;
-        }
-      } catch (error) {
-        console.error("VAULT title selection error:", error);
-      }
-    });
-  }
-
-  fixTitleSelect();
-
-  new MutationObserver(fixTitleSelect).observe(
-    document.body,
-    { childList: true, subtree: true }
-  );
 })();
