@@ -580,42 +580,87 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
 })();
 
 
+
 /* =========================================
-   VAULT — DEVELOPER EDITION 0.3
-   CHALLENGE EDITOR
+   VAULT — DEVELOPER EDITION 0.4
+   CHALLENGE LIBRARY
 ========================================= */
 
 (() => {
-  const EDITOR_KEY = "vault_custom_challenge_01";
+  const LIBRARY_KEY = "vault_challenge_library_01";
+  const LEGACY_KEY = "vault_custom_challenge_01";
 
-  const originalQuestion = JSON.parse(JSON.stringify(QUESTION));
-
-  function loadCustomQuestion() {
-    try {
-      const saved = localStorage.getItem(EDITOR_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
   }
 
-  let customQuestion = loadCustomQuestion();
+  function loadLibrary() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LIBRARY_KEY));
+
+      if (saved && Array.isArray(saved.items)) {
+        return saved;
+      }
+
+      // Migration automatique du défi créé en version 0.3.
+      const legacy = localStorage.getItem(LEGACY_KEY);
+
+      if (legacy) {
+        const question = JSON.parse(legacy);
+
+        const item = {
+          id: "challenge_" + Date.now(),
+          name: "Mon premier défi",
+          question
+        };
+
+        return {
+          items: [item],
+          activeId: item.id
+        };
+      }
+    } catch (error) {
+      console.error("VAULT library loading error:", error);
+    }
+
+    return {
+      items: [],
+      activeId: null
+    };
+  }
+
+  let library = loadLibrary();
+  let selectedId = library.activeId;
+
+  function saveLibrary() {
+    localStorage.setItem(LIBRARY_KEY, JSON.stringify(library));
+  }
+
+  function activeItem() {
+    return library.items.find(item => item.id === library.activeId) || null;
+  }
+
+  function selectedItem() {
+    return library.items.find(item => item.id === selectedId) || null;
+  }
 
   function activeQuestion() {
-    return customQuestion || QUESTION;
+    const item = activeItem();
+    return item ? item.question : QUESTION;
   }
 
-  function editorText(fr, en) {
+  function text(fr, en) {
     return language === "fr" ? fr : en;
   }
 
-  function addEditorStyles() {
-    if (document.getElementById("vaultEditorStyles")) return;
+  function addLibraryStyles() {
+    if (document.getElementById("vaultLibraryStyles")) return;
 
     const style = document.createElement("style");
-    style.id = "vaultEditorStyles";
+    style.id = "vaultLibraryStyles";
+
     style.textContent = `
-      .vault-editor-field {
+      .vault-library-field {
         display:flex;
         flex-direction:column;
         gap:6px;
@@ -623,10 +668,10 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
         color:#aebbd2;
         font-size:11px;
         font-weight:700;
-        letter-spacing:.5px;
       }
-      .vault-editor-field input,
-      .vault-editor-field select {
+
+      .vault-library-field input,
+      .vault-library-field select {
         width:100%;
         box-sizing:border-box;
         padding:11px;
@@ -636,69 +681,103 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
         color:white;
         font-size:13px;
       }
-      .vault-editor-grid {
+
+      .vault-library-grid {
         display:grid;
         grid-template-columns:1fr 1fr;
         gap:10px;
       }
-      .vault-editor-note {
+
+      .vault-library-note {
         color:#929db5;
         font-size:11px;
         line-height:1.5;
-        margin-bottom:14px;
+        margin:10px 0;
       }
+
+      .vault-library-status {
+        color:#77e6b0;
+        font-size:11px;
+        margin-top:12px;
+      }
+
       @media(max-width:500px) {
-        .vault-editor-grid { grid-template-columns:1fr; }
+        .vault-library-grid {
+          grid-template-columns:1fr;
+        }
       }
     `;
+
     document.head.appendChild(style);
   }
 
-  function createEditor() {
+  function createLibraryUI() {
     const panel = document.getElementById("vaultDevPanel");
-    if (!panel || document.getElementById("vaultChallengeEditor")) return;
+
+    if (!panel || document.getElementById("vaultChallengeLibrary")) return;
 
     const section = document.createElement("div");
     section.className = "dev-section";
-    section.id = "vaultChallengeEditor";
+    section.id = "vaultChallengeLibrary";
 
     section.innerHTML = `
-      <h3 id="editorHeading"></h3>
-      <p class="vault-editor-note" id="editorDescription"></p>
+      <h3 id="libraryHeading"></h3>
 
-      <div class="vault-editor-field">
+      <div class="vault-library-field">
+        <label id="librarySelectLabel"></label>
+        <select id="librarySelect"></select>
+      </div>
+
+      <div class="dev-row">
+        <button class="dev-action" id="libraryNew"></button>
+        <button class="dev-action" id="libraryActivate"></button>
+        <button class="dev-action danger" id="libraryDelete"></button>
+      </div>
+
+      <div class="vault-library-note" id="libraryActiveInfo"></div>
+
+      <hr style="border-color:#293246;margin:18px 0">
+
+      <h3 id="editorHeading"></h3>
+
+      <div class="vault-library-field">
+        <label id="editorNameLabel"></label>
+        <input id="editorName" maxlength="60">
+      </div>
+
+      <div class="vault-library-field">
         <label id="editorQuestionFrLabel"></label>
         <input id="editorQuestionFr" maxlength="180">
       </div>
 
-      <div class="vault-editor-field">
+      <div class="vault-library-field">
         <label id="editorQuestionEnLabel"></label>
         <input id="editorQuestionEn" maxlength="180">
       </div>
 
-      <div class="vault-editor-field">
+      <div class="vault-library-field">
         <label id="editorRuleFrLabel"></label>
         <input id="editorRuleFr" maxlength="220">
       </div>
 
-      <div class="vault-editor-field">
+      <div class="vault-library-field">
         <label id="editorRuleEnLabel"></label>
         <input id="editorRuleEn" maxlength="220">
       </div>
 
-      <div class="vault-editor-field">
+      <div class="vault-library-field">
         <label id="editorSequenceLabel"></label>
-        <div class="vault-editor-grid">
-          <input id="editorSeq0" type="text" maxlength="12">
-          <input id="editorSeq1" type="text" maxlength="12">
-          <input id="editorSeq2" type="text" maxlength="12">
-          <input id="editorSeq3" type="text" maxlength="12">
+        <div class="vault-library-grid">
+          <input id="editorSeq0" maxlength="12">
+          <input id="editorSeq1" maxlength="12">
+          <input id="editorSeq2" maxlength="12">
+          <input id="editorSeq3" maxlength="12">
         </div>
       </div>
 
-      <div class="vault-editor-field">
+      <div class="vault-library-field">
         <label id="editorAnswersLabel"></label>
-        <div class="vault-editor-grid">
+        <div class="vault-library-grid">
           <input id="editorAnswer0" maxlength="40">
           <input id="editorAnswer1" maxlength="40">
           <input id="editorAnswer2" maxlength="40">
@@ -706,7 +785,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
         </div>
       </div>
 
-      <div class="vault-editor-field">
+      <div class="vault-library-field">
         <label id="editorCorrectLabel"></label>
         <select id="editorCorrect">
           <option value="0">Réponse 1</option>
@@ -718,11 +797,10 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
 
       <div class="dev-row">
         <button class="dev-action" id="editorSave"></button>
-        <button class="dev-action" id="editorTest"></button>
-        <button class="dev-action danger" id="editorRestore"></button>
+        <button class="dev-action danger" id="libraryRestore"></button>
       </div>
 
-      <div id="editorStatus" class="vault-editor-note"></div>
+      <div id="editorStatus" class="vault-library-status"></div>
     `;
 
     const dataSection = panel.querySelector("#devData")?.closest(".dev-section");
@@ -733,72 +811,91 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
       panel.appendChild(section);
     }
 
+    document.getElementById("librarySelect").onchange = event => {
+      selectedId = event.target.value || null;
+      fillEditor();
+      updateLibraryUI();
+    };
+
+    document.getElementById("libraryNew").onclick = createNewChallenge;
+    document.getElementById("libraryActivate").onclick = activateChallenge;
+    document.getElementById("libraryDelete").onclick = deleteChallenge;
     document.getElementById("editorSave").onclick = saveEditor;
-    document.getElementById("editorTest").onclick = testEditor;
-    document.getElementById("editorRestore").onclick = restoreEditor;
+    document.getElementById("libraryRestore").onclick = restoreOriginal;
 
     fillEditor();
-    updateEditorLanguage();
+    updateLibraryLanguage();
+    updateLibraryUI();
+  }
+
+  function createNewChallenge() {
+    const id = "challenge_" + Date.now();
+
+    const question = {
+      fr: {
+        q: "Nouvelle question",
+        rule: "Écris ton indice ici.",
+        prompt: "Sélectionnez votre réponse :",
+        sequence: ["1", "2", "3", "4"],
+        answers: ["5", "6", "7", "8"],
+        correct: 0
+      },
+      en: {
+        q: "New question",
+        rule: "Write your hint here.",
+        prompt: "Select your answer:",
+        sequence: ["1", "2", "3", "4"],
+        answers: ["5", "6", "7", "8"],
+        correct: 0
+      }
+    };
+
+    library.items.push({
+      id,
+      name: "Nouveau défi",
+      question
+    });
+
+    selectedId = id;
+
+    saveLibrary();
+    fillEditor();
+    updateLibraryUI();
+    updateLibraryLanguage();
+
+    document.getElementById("editorStatus").textContent =
+      text("Nouveau défi créé. Tu peux maintenant le modifier.",
+           "New challenge created. You can now edit it.");
   }
 
   function fillEditor() {
-    const q = activeQuestion();
+    const item = selectedItem();
+    if (!item) return;
+
+    const q = item.question;
+
+    document.getElementById("editorName").value = item.name || "";
 
     document.getElementById("editorQuestionFr").value = q.fr.q;
     document.getElementById("editorQuestionEn").value = q.en.q;
     document.getElementById("editorRuleFr").value = q.fr.rule;
     document.getElementById("editorRuleEn").value = q.en.rule;
 
-    q.fr.sequence.forEach((v, i) => {
-      document.getElementById("editorSeq" + i).value = v;
+    q.fr.sequence.forEach((value, index) => {
+      document.getElementById("editorSeq" + index).value = value;
     });
 
-    q.fr.answers.forEach((v, i) => {
-      document.getElementById("editorAnswer" + i).value = v;
+    q.fr.answers.forEach((value, index) => {
+      document.getElementById("editorAnswer" + index).value = value;
     });
 
     document.getElementById("editorCorrect").value = String(q.fr.correct);
   }
 
-  function updateEditorLanguage() {
-    if (!document.getElementById("vaultChallengeEditor")) return;
-
-    const labels = {
-      editorHeading: ["ÉDITEUR DE DÉFIS", "CHALLENGE EDITOR"],
-      editorDescription: [
-        "Crée ou modifie ton défi. Les changements sont enregistrés séparément de ta progression.",
-        "Create or edit your challenge. Changes are saved separately from your progress."
-      ],
-      editorQuestionFrLabel: ["QUESTION EN FRANÇAIS", "QUESTION IN FRENCH"],
-      editorQuestionEnLabel: ["QUESTION EN ANGLAIS", "QUESTION IN ENGLISH"],
-      editorRuleFrLabel: ["INDICE EN FRANÇAIS", "HINT IN FRENCH"],
-      editorRuleEnLabel: ["INDICE EN ANGLAIS", "HINT IN ENGLISH"],
-      editorSequenceLabel: ["SÉQUENCE — 4 NOMBRES", "SEQUENCE — 4 NUMBERS"],
-      editorAnswersLabel: ["LES 4 RÉPONSES", "THE 4 ANSWERS"],
-      editorCorrectLabel: ["NUMÉRO DE LA BONNE RÉPONSE", "CORRECT ANSWER NUMBER"],
-      editorSave: ["ENREGISTRER LE DÉFI", "SAVE CHALLENGE"],
-      editorTest: ["TESTER LE DÉFI", "TEST CHALLENGE"],
-      editorRestore: ["RESTAURER L'ORIGINAL", "RESTORE ORIGINAL"]
-    };
-
-    Object.entries(labels).forEach(([id, values]) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = values[language === "fr" ? 0 : 1];
-    });
-
-    const select = document.getElementById("editorCorrect");
-    if (select) {
-      [...select.options].forEach((option, i) => {
-        option.textContent = editorText(
-          "Réponse " + (i + 1),
-          "Answer " + (i + 1)
-        );
-      });
-    }
-  }
-
   function readEditor() {
     const value = id => document.getElementById(id).value.trim();
+
+    const name = value("editorName");
 
     const question = {
       fr: {
@@ -819,7 +916,8 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
       }
     };
 
-    const allText = [
+    const allFields = [
+      name,
       question.fr.q,
       question.en.q,
       question.fr.rule,
@@ -828,80 +926,205 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
       ...question.fr.answers
     ];
 
-    if (allText.some(v => !v)) {
-      throw new Error(editorText(
+    if (allFields.some(field => !field)) {
+      throw new Error(text(
         "Tous les champs doivent être remplis.",
         "All fields must be completed."
       ));
     }
 
-    if (
-      question.fr.sequence.length !== 4 ||
-      question.fr.answers.length !== 4 ||
-      question.fr.correct < 0 ||
-      question.fr.correct > 3
-    ) {
-      throw new Error("Invalid challenge.");
+    if (question.fr.correct < 0 || question.fr.correct > 3) {
+      throw new Error("Invalid answer.");
     }
 
-    return question;
+    return { name, question };
   }
 
   function saveEditor() {
+    const item = selectedItem();
+
+    if (!item) {
+      document.getElementById("editorStatus").textContent =
+        text("Crée d'abord un défi.", "Create a challenge first.");
+      return;
+    }
+
     try {
-      customQuestion = readEditor();
-      localStorage.setItem(EDITOR_KEY, JSON.stringify(customQuestion));
+      const data = readEditor();
+
+      item.name = data.name;
+      item.question = data.question;
+
+      saveLibrary();
+      updateLibraryUI();
 
       document.getElementById("editorStatus").textContent =
-        editorText("✓ Défi enregistré.", "✓ Challenge saved.");
+        text("Défi enregistré.", "Challenge saved.");
 
-      renderChallenge();
+      if (library.activeId === item.id) {
+        renderChallenge();
+      }
     } catch (error) {
       document.getElementById("editorStatus").textContent = error.message;
     }
   }
 
-  function testEditor() {
+  function activateChallenge() {
+    const item = selectedItem();
+
+    if (!item) {
+      document.getElementById("editorStatus").textContent =
+        text("Sélectionne un défi.", "Select a challenge.");
+      return;
+    }
+
     try {
-      customQuestion = readEditor();
-      localStorage.setItem(EDITOR_KEY, JSON.stringify(customQuestion));
+      const data = readEditor();
+
+      item.name = data.name;
+      item.question = data.question;
+      library.activeId = item.id;
+
+      saveLibrary();
 
       selectedAnswer = null;
       document.getElementById("feedback").textContent = "";
+      document.getElementById("feedback").className = "feedback";
 
-      renderChallenge();
-      closeConsole();
-      go("challenge");
+      render();
+      updateLibraryUI();
 
-      showToast(editorText(
-        "Défi de test chargé.",
-        "Test challenge loaded."
-      ));
+      document.getElementById("editorStatus").textContent =
+        text("Défi activé dans le jeu.", "Challenge activated in the game.");
     } catch (error) {
       document.getElementById("editorStatus").textContent = error.message;
     }
   }
 
-  function restoreEditor() {
-    if (!confirm(editorText(
-      "Restaurer le défi original ?",
-      "Restore the original challenge?"
+  function deleteChallenge() {
+    const item = selectedItem();
+    if (!item) return;
+
+    if (!confirm(text(
+      "Supprimer ce défi définitivement ?",
+      "Permanently delete this challenge?"
     ))) return;
 
-    customQuestion = null;
-    localStorage.removeItem(EDITOR_KEY);
+    library.items = library.items.filter(entry => entry.id !== item.id);
 
+    if (library.activeId === item.id) {
+      library.activeId = null;
+    }
+
+    selectedId = library.items[0]?.id || null;
+
+    saveLibrary();
     fillEditor();
-    renderChallenge();
+    updateLibraryUI();
+
+    selectedAnswer = null;
+    render();
 
     document.getElementById("editorStatus").textContent =
-      editorText("Défi original restauré.", "Original challenge restored.");
+      text("Défi supprimé.", "Challenge deleted.");
   }
 
-    // Conserve la fonction originale pour l'affichage de secours.
-  const originalRenderChallenge = renderChallenge;
-  
-  // Le jeu utilise désormais le défi personnalisé s'il existe.
+  function restoreOriginal() {
+    if (!confirm(text(
+      "Supprimer tous les défis personnalisés et réactiver le défi original ?",
+      "Delete all custom challenges and restore the original challenge?"
+    ))) return;
+
+    library = {
+      items: [],
+      activeId: null
+    };
+
+    selectedId = null;
+
+    localStorage.removeItem(LIBRARY_KEY);
+    localStorage.removeItem(LEGACY_KEY);
+
+    selectedAnswer = null;
+    render();
+    fillEditor();
+    updateLibraryUI();
+
+    document.getElementById("editorStatus").textContent =
+      text("Défi original restauré.", "Original challenge restored.");
+  }
+
+  function updateLibraryUI() {
+    const select = document.getElementById("librarySelect");
+    if (!select) return;
+
+    select.innerHTML = "";
+
+    library.items.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent =
+        (item.id === library.activeId ? "✓ " : "") + item.name;
+      select.appendChild(option);
+    });
+
+    select.value = selectedId || "";
+
+    const active = activeItem();
+
+    document.getElementById("libraryActiveInfo").textContent = active
+      ? text("Défi actuellement actif : ", "Currently active challenge: ") + active.name
+      : text("Défi original actuellement actif.", "Original challenge currently active.");
+
+    document.getElementById("libraryActivate").disabled =
+      !selectedId || selectedId === library.activeId;
+
+    document.getElementById("libraryDelete").disabled = !selectedId;
+    document.getElementById("editorSave").disabled = !selectedId;
+  }
+
+  function updateLibraryLanguage() {
+    const labels = {
+      libraryHeading: ["BIBLIOTHÈQUE DE DÉFIS", "CHALLENGE LIBRARY"],
+      librarySelectLabel: ["CHOISIR UN DÉFI", "SELECT A CHALLENGE"],
+      libraryNew: ["CRÉER UN DÉFI", "CREATE CHALLENGE"],
+      libraryActivate: ["ACTIVER CE DÉFI", "ACTIVATE CHALLENGE"],
+      libraryDelete: ["SUPPRIMER", "DELETE"],
+      editorHeading: ["ÉDITEUR DE DÉFIS", "CHALLENGE EDITOR"],
+      editorNameLabel: ["NOM DU DÉFI", "CHALLENGE NAME"],
+      editorQuestionFrLabel: ["QUESTION EN FRANÇAIS", "QUESTION IN FRENCH"],
+      editorQuestionEnLabel: ["QUESTION EN ANGLAIS", "QUESTION IN ENGLISH"],
+      editorRuleFrLabel: ["INDICE EN FRANÇAIS", "HINT IN FRENCH"],
+      editorRuleEnLabel: ["INDICE EN ANGLAIS", "HINT IN ENGLISH"],
+      editorSequenceLabel: ["SÉQUENCE — 4 NOMBRES", "SEQUENCE — 4 NUMBERS"],
+      editorAnswersLabel: ["LES 4 RÉPONSES", "THE 4 ANSWERS"],
+      editorCorrectLabel: ["NUMÉRO DE LA BONNE RÉPONSE", "CORRECT ANSWER NUMBER"],
+      editorSave: ["ENREGISTRER LES MODIFICATIONS", "SAVE CHANGES"],
+      libraryRestore: ["RESTAURER LE DÉFI ORIGINAL", "RESTORE ORIGINAL CHALLENGE"]
+    };
+
+    Object.entries(labels).forEach(([id, values]) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.textContent = values[language === "fr" ? 0 : 1];
+      }
+    });
+
+    const correct = document.getElementById("editorCorrect");
+
+    if (correct) {
+      [...correct.options].forEach((option, index) => {
+        option.textContent = text(
+          "Réponse " + (index + 1),
+          "Answer " + (index + 1)
+        );
+      });
+    }
+
+    updateLibraryUI();
+  }
+
+  // Affichage du défi actuellement actif.
   renderChallenge = function() {
     const done = state.completedDays.includes(todayKey());
     const q = activeQuestion()[language];
@@ -913,7 +1136,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
     const sequence = document.getElementById("numberSequence");
     sequence.innerHTML = "";
 
-    q.sequence.forEach((number, index) => {
+    q.sequence.forEach(number => {
       const span = document.createElement("span");
       span.textContent = number;
       sequence.appendChild(span);
@@ -934,6 +1157,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
       const button = document.createElement("button");
       button.className =
         "answer-option" + (selectedAnswer === index ? " selected" : "");
+
       button.textContent = answer;
       button.disabled = done;
 
@@ -965,7 +1189,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
     }
   };
 
-  // La validation compare avec la bonne réponse du défi actif.
+  // Validation du défi actif.
   completeChallenge = function() {
     if (state.completedDays.includes(todayKey())) {
       showToast(t("alreadyDone"));
@@ -1005,31 +1229,19 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
     showToast(level() > oldLevel ? t("levelUp") : t("correct"));
   };
 
-  addEditorStyles();
+  addLibraryStyles();
+  createLibraryUI();
 
-  // La console 0.2 existe déjà : on y insère le nouvel éditeur.
-  createEditor();
-
-   // Réactualise le défi après l'initialisation complète.
-  window.addEventListener("DOMContentLoaded", () => {
-    if (customQuestion) {
-      renderChallenge();
-    }
-  });
-
-
-  // Actualise les libellés lorsque la langue du jeu change.
+  // Actualise l'interface après l'installation de la bibliothèque.
   const previousRender = render;
 
   render = function() {
     previousRender();
-
-    // Réapplique le défi personnalisé après chaque rendu.
-    if (customQuestion) {
-      renderChallenge();
-    }
-
-    updateEditorLanguage();
+    renderChallenge();
+    updateLibraryLanguage();
   };
+
+  // Applique le défi actif dès le chargement.
+  render();
 
 })();
