@@ -898,6 +898,9 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
       editorText("Défi original restauré.", "Original challenge restored.");
   }
 
+    // Conserve la fonction originale pour l'affichage de secours.
+  const originalRenderChallenge = renderChallenge;
+  
   // Le jeu utilise désormais le défi personnalisé s'il existe.
   renderChallenge = function() {
     const done = state.completedDays.includes(todayKey());
@@ -1007,10 +1010,12 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
   // La console 0.2 existe déjà : on y insère le nouvel éditeur.
   createEditor();
 
-    // Charge le défi personnalisé dès le démarrage.
-  if (customQuestion) {
-    renderChallenge();
-  }
+   // Réactualise le défi après l'initialisation complète.
+  window.addEventListener("DOMContentLoaded", () => {
+    if (customQuestion) {
+      renderChallenge();
+    }
+  });
 
 
   // Actualise les libellés lorsque la langue du jeu change.
