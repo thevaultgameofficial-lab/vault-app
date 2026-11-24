@@ -2225,3 +2225,84 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   }
 
 })();
+
+
+/* ==========================================
+   VAULT — TITLE SELECT FIX 0.8.1
+========================================== */
+
+(function () {
+  const STORAGE_KEY = "vault_mvp_01";
+
+  function fixTitleSelect() {
+    const select = document.getElementById("vaultTitleSelect08");
+
+    if (!select || select.dataset.fixed081) return;
+
+    select.dataset.fixed081 = "true";
+
+    select.addEventListener("change", function () {
+      try {
+        const state = JSON.parse(
+          localStorage.getItem(STORAGE_KEY)
+        );
+
+        if (!state) return;
+
+        const choice = this.value;
+        const allowed = [
+          "archivist",
+          ...(state.vaultTitles || [])
+        ];
+
+        if (!allowed.includes(choice)) return;
+
+        state.selectedVaultTitle = choice;
+
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(state)
+        );
+
+        const display = document.querySelector(
+          "#vaultTitles08 > div > div:nth-child(2) > div"
+        );
+
+        const titles = {
+          archivist: { fr: "Archiviste", en: "Archivist", icon: "📜" },
+          explorer: { fr: "Explorateur", en: "Explorer", icon: "🧭" },
+          regular: { fr: "Habitué", en: "Regular", icon: "🔥" },
+          veteran: { fr: "Vétéran", en: "Veteran", icon: "⚔️" },
+          collector: { fr: "Collectionneur", en: "Collector", icon: "🗝️" },
+          master: { fr: "Archiviste suprême", en: "Grand Archivist", icon: "🏛️" },
+          experienced: { fr: "Érudit", en: "Scholar", icon: "💎" },
+          guardian: { fr: "Gardien des reliques", en: "Relic Guardian", icon: "👑" }
+        };
+
+        const lang = state.language === "fr" ? "fr" : "en";
+        const title = titles[choice];
+
+        if (display && title) {
+          display.innerHTML = `
+            <div style="font-size:30px;">${title.icon}</div>
+            <div style="font-size:16px;font-weight:800;margin-top:5px;">
+              ${title[lang]}
+            </div>
+            <div style="font-size:10px;opacity:.6;margin-top:4px;">
+              ${lang === "fr" ? "TITRE ÉQUIPÉ" : "EQUIPPED TITLE"}
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error("VAULT title selection error:", error);
+      }
+    });
+  }
+
+  fixTitleSelect();
+
+  new MutationObserver(fixTitleSelect).observe(
+    document.body,
+    { childList: true, subtree: true }
+  );
+})();
