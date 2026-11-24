@@ -1007,6 +1007,12 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.a
   // La console 0.2 existe déjà : on y insère le nouvel éditeur.
   createEditor();
 
+    // Charge le défi personnalisé dès le démarrage.
+  if (customQuestion) {
+    renderChallenge();
+  }
+
+
   // Actualise les libellés lorsque la langue du jeu change.
   const previousRender = render;
 
