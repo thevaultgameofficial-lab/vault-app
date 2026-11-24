@@ -1591,3 +1591,274 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   }
 
 })();
+
+
+/* ==========================================
+   VAULT — SEASON 0.7
+   Season 1: The Forgotten Relics
+========================================== */
+
+(function () {
+  const STORAGE_KEY = "vault_mvp_01";
+  const SEASON_DURATION = 30 * 24 * 60 * 60 * 1000;
+
+  const RELICS = [
+    { id: "medal", icon: "🏵️", goal: 1,
+      fr: "Médaille oubliée", en: "Forgotten Medal" },
+    { id: "crystal", icon: "💠", goal: 3,
+      fr: "Cristal du crépuscule", en: "Twilight Crystal" },
+    { id: "key", icon: "🗝️", goal: 5,
+      fr: "Clé des anciens", en: "Key of the Ancients" },
+    { id: "compass", icon: "🧭", goal: 7,
+      fr: "Boussole perdue", en: "Lost Compass" },
+    { id: "crown", icon: "👑", goal: 10,
+      fr: "Couronne oubliée", en: "Forgotten Crown" }
+  ];
+
+  function getState() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveState(s) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  }
+
+  function initializeSeason(s) {
+    if (!s.season07) {
+      const now = Date.now();
+
+      s.season07 = {
+        start: now,
+        progress: 0,
+        lastCompletedCount: (s.completedDays || []).length,
+        relics: []
+      };
+
+      saveState(s);
+    }
+
+    if (!Array.isArray(s.season07.relics)) {
+      s.season07.relics = [];
+    }
+
+    return s.season07;
+  }
+
+  function updateSeason() {
+    const s = getState();
+    const profile = document.getElementById("profileView");
+
+    if (!s || !profile) return;
+
+    const season = initializeSeason(s);
+    const completed = (s.completedDays || []).length;
+
+    // Détecte les nouveaux défis terminés
+    if (completed > season.lastCompletedCount) {
+      season.progress += completed - season.lastCompletedCount;
+    }
+
+    season.lastCompletedCount = completed;
+
+    // Débloque les reliques automatiquement
+    RELICS.forEach(relic => {
+      if (
+        season.progress >= relic.goal &&
+        !season.relics.includes(relic.id)
+      ) {
+        season.relics.push(relic.id);
+      }
+    });
+
+    saveState(s);
+
+    const lang = s.language === "fr" ? "fr" : "en";
+    const elapsed = Date.now() - season.start;
+    const remaining = Math.max(
+      0,
+      Math.ceil((SEASON_DURATION - elapsed) / 86400000)
+    );
+
+    const active = elapsed < SEASON_DURATION;
+    const unlocked = season.relics.length;
+
+    const relicCards = RELICS.map(relic => {
+      const obtained = season.relics.includes(relic.id);
+      const progress = Math.min(
+        100,
+        Math.round((season.progress / relic.goal) * 100)
+      );
+
+      return `
+        <div style="
+          border:1px solid ${obtained ? '#a184dc' : 'rgba(255,255,255,.1)'};
+          border-radius:12px;
+          padding:12px;
+          text-align:center;
+          background:${obtained ? 'rgba(128,101,201,.15)' : 'rgba(255,255,255,.025)'};
+          opacity:${obtained ? '1' : '.65'};
+        ">
+          <div style="
+            font-size:30px;
+            filter:${obtained ? 'none' : 'grayscale(1)'};
+          ">${relic.icon}</div>
+
+          <div style="font-size:12px;font-weight:700;margin-top:7px;">
+            ${relic[lang]}
+          </div>
+
+          <div style="font-size:10px;opacity:.65;margin-top:5px;">
+            ${obtained
+              ? (lang === "fr" ? "Obtenue ✓" : "Obtained ✓")
+              : `${Math.min(season.progress, relic.goal)} / ${relic.goal}`}
+          </div>
+
+          <div style="
+            height:4px;
+            background:rgba(255,255,255,.12);
+            border-radius:5px;
+            margin-top:9px;
+            overflow:hidden;
+          ">
+            <div style="
+              height:100%;
+              width:${progress}%;
+              background:#a184dc;
+            "></div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const html = `
+      <div id="vaultSeason07" style="margin-top:25px;">
+
+        <div style="
+          border:1px solid rgba(161,132,220,.4);
+          border-radius:15px;
+          padding:16px;
+          background:linear-gradient(135deg,rgba(91,65,145,.2),rgba(20,20,35,.3));
+        ">
+
+          <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px;
+          ">
+            <div>
+              <div style="font-size:17px;font-weight:800;">
+                🏺 ${lang === "fr" ? "Les Reliques oubliées" : "The Forgotten Relics"}
+              </div>
+
+              <div style="font-size:11px;opacity:.65;margin-top:4px;">
+                ${lang === "fr" ? "SAISON 01 · COLLECTION EXCLUSIVE" : "SEASON 01 · EXCLUSIVE COLLECTION"}
+              </div>
+            </div>
+
+            <div style="
+              font-size:12px;
+              font-weight:700;
+              white-space:nowrap;
+              padding:7px 10px;
+              border-radius:20px;
+              background:rgba(161,132,220,.2);
+            ">
+              ${unlocked} / 5
+            </div>
+          </div>
+
+          <div style="font-size:12px;margin-top:16px;opacity:.8;">
+            ${active
+              ? (lang === "fr"
+                ? `⏳ ${remaining} jour${remaining > 1 ? "s" : ""} restant${remaining > 1 ? "s" : ""}`
+                : `⏳ ${remaining} day${remaining > 1 ? "s" : ""} remaining`)
+              : (lang === "fr" ? "Saison terminée" : "Season ended")}
+          </div>
+
+          <div style="
+            height:7px;
+            border-radius:10px;
+            background:rgba(255,255,255,.12);
+            overflow:hidden;
+            margin-top:9px;
+          ">
+            <div style="
+              height:100%;
+              width:${Math.min(100, season.progress / 10 * 100)}%;
+              background:#a184dc;
+            "></div>
+          </div>
+
+          <div style="font-size:11px;opacity:.65;margin-top:6px;">
+            ${lang === "fr"
+              ? `${Math.min(season.progress, 10)} / 10 défis saisonniers`
+              : `${Math.min(season.progress, 10)} / 10 seasonal challenges`}
+          </div>
+
+          <div style="
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(105px,1fr));
+            gap:9px;
+            margin-top:16px;
+          ">
+            ${relicCards}
+          </div>
+
+          <div style="
+            font-size:11px;
+            opacity:.6;
+            text-align:center;
+            margin-top:14px;
+          ">
+            ${lang === "fr"
+              ? "Les reliques obtenues restent dans ta collection après la saison."
+              : "Obtained relics remain in your collection after the season."}
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    const existing = document.getElementById("vaultSeason07");
+
+    if (!existing) {
+      profile.insertAdjacentHTML("beforeend", html);
+    } else if (existing.outerHTML !== html) {
+      existing.outerHTML = html;
+    }
+  }
+
+  let scheduled = false;
+
+  const observer = new MutationObserver(() => {
+    if (scheduled) return;
+
+    scheduled = true;
+
+    requestAnimationFrame(() => {
+      scheduled = false;
+      updateSeason();
+    });
+  });
+
+  function start() {
+    updateSeason();
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+
+})();
