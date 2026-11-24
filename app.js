@@ -28,8 +28,16 @@ let language=state.language||'en';
 let selectedAnswer=null;
 let toastTimer;
 
-function freshState(){return {xp:0,completedDays:[],unlocked:['coin'],language:'en'};}
-function loadState(){try{return {...freshState(),...JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}}catch{return freshState()}}
+function freshState(){
+ return {
+  xp:0,
+  completedDays:[],
+  unlocked:['coin'],
+  language:'en',
+  profileName:'Archiviste',
+  avatar:'🗝️'
+ };
+}function loadState(){try{return {...freshState(),...JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}}catch{return freshState()}}
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
 function t(key){return I18N[language][key]??key}
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
@@ -1088,3 +1096,222 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 
  render();
 })();
+
+
+/* =========================================
+   VAULT — PLAYER PROFILE 0.5
+========================================= */
+
+(()=>{
+ const STYLE_ID="vaultPlayerProfileStyles";
+ const CARD_ID="vaultPlayerProfile";
+
+ function addProfileStyles(){
+  if(document.getElementById(STYLE_ID))return;
+
+  const style=document.createElement("style");
+  style.id=STYLE_ID;
+  style.textContent=`
+   #vaultPlayerProfile{
+    background:linear-gradient(135deg,#171c2b,#24203b);
+    border:1px solid #6654a8;
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:22px;
+   }
+   .vp-identity{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-bottom:22px;
+   }
+   .vp-avatar{
+    width:65px;
+    height:65px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:32px;
+    background:#30264f;
+    border:1px solid #806acb;
+    border-radius:15px;
+   }
+   .vp-name{
+    font-size:20px;
+    font-weight:800;
+    color:#fff;
+    margin-bottom:5px;
+   }
+   .vp-rank{
+    font-size:10px;
+    letter-spacing:2px;
+    color:#b7a5ff;
+   }
+   .vp-edit{
+    display:grid;
+    grid-template-columns:1fr 110px;
+    gap:9px;
+    margin-bottom:20px;
+   }
+   .vp-edit input,.vp-edit select{
+    min-width:0;
+    padding:11px;
+    border-radius:7px;
+    border:1px solid #3a4660;
+    background:#0c1220;
+    color:white;
+   }
+   .vp-save{
+    grid-column:1/-1;
+    padding:11px;
+    border-radius:7px;
+    border:1px solid #6654a8;
+    background:#30264f;
+    color:white;
+    font-weight:800;
+    cursor:pointer;
+   }
+   .vp-stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:9px;
+   }
+   .vp-stat{
+    background:#0c1220;
+    border:1px solid #30394e;
+    border-radius:10px;
+    padding:13px 8px;
+    text-align:center;
+   }
+   .vp-stat strong{
+    display:block;
+    font-size:21px;
+    color:#b7a5ff;
+    margin-bottom:5px;
+   }
+   .vp-stat span{
+    font-size:9px;
+    letter-spacing:1px;
+    color:#aebbd2;
+   }
+   @media(max-width:450px){
+    .vp-stats{grid-template-columns:1fr 1fr}
+   }
+  `;
+  document.head.appendChild(style);
+ }
+
+ function createProfile(){
+  const view=document.getElementById("profileView");
+  if(!view||document.getElementById(CARD_ID))return;
+
+  const card=document.createElement("section");
+  card.id=CARD_ID;
+
+  card.innerHTML=`
+   <div class="vp-identity">
+    <div class="vp-avatar" id="vpAvatar"></div>
+    <div>
+     <div class="vp-name" id="vpName"></div>
+     <div class="vp-rank" id="vpRank"></div>
+    </div>
+   </div>
+
+   <div class="vp-edit">
+    <input id="vpNameInput" maxlength="24">
+    <select id="vpAvatarInput">
+     <option value="🗝️">🗝️</option>
+     <option value="🏛️">🏛️</option>
+     <option value="🧭">🧭</option>
+     <option value="🔮">🔮</option>
+     <option value="👑">👑</option>
+     <option value="⚔️">⚔️</option>
+     <option value="🌙">🌙</option>
+     <option value="🐉">🐉</option>
+     <option value="📜">📜</option>
+     <option value="💎">💎</option>
+    </select>
+    <button class="vp-save" id="vpSave"></button>
+   </div>
+
+   <div class="vp-stats">
+    <div class="vp-stat">
+     <strong id="vpXP">0</strong>
+     <span id="vpXPLabel"></span>
+    </div>
+    <div class="vp-stat">
+     <strong id="vpChallenges">0</strong>
+     <span id="vpChallengeLabel"></span>
+    </div>
+    <div class="vp-stat">
+     <strong id="vpArtifacts">0/10</strong>
+     <span id="vpArtifactLabel"></span>
+    </div>
+   </div>
+  `;
+
+  view.prepend(card);
+
+  document.getElementById("vpSave").onclick=()=>{
+   const name=document.getElementById("vpNameInput").value.trim();
+
+   if(!name){
+    showToast(language==="fr"?"Choisis un pseudonyme.":"Choose a username.");
+    return;
+   }
+
+   state.profileName=name.slice(0,24);
+   state.avatar=document.getElementById("vpAvatarInput").value;
+
+   saveState();
+   render();
+   showToast(language==="fr"?"Profil enregistré.":"Profile saved.");
+  };
+ }
+
+ function updateProfile(){
+  if(!document.getElementById(CARD_ID))return;
+
+  const name=state.profileName||"Archiviste";
+  const avatar=state.avatar||"🗝️";
+
+  document.getElementById("vpAvatar").textContent=avatar;
+  document.getElementById("vpName").textContent=name;
+  document.getElementById("vpRank").textContent=
+   language==="fr"?"ARCHIVISTE · SAISON 01":"ARCHIVIST · SEASON 01";
+
+  document.getElementById("vpNameInput").value=name;
+  document.getElementById("vpAvatarInput").value=avatar;
+
+  document.getElementById("vpSave").textContent=
+   language==="fr"?"ENREGISTRER LE PROFIL":"SAVE PROFILE";
+
+  document.getElementById("vpXP").textContent=state.xp;
+  document.getElementById("vpChallenges").textContent=state.completedDays.length;
+  document.getElementById("vpArtifacts").textContent=
+   state.unlocked.length+"/10";
+
+  document.getElementById("vpXPLabel").textContent=
+   language==="fr"?"XP TOTAL":"TOTAL XP";
+
+  document.getElementById("vpChallengeLabel").textContent=
+   language==="fr"?"DÉFIS TERMINÉS":"CHALLENGES";
+
+  document.getElementById("vpArtifactLabel").textContent=
+   language==="fr"?"ARTEFACTS":"ARTIFACTS";
+ }
+
+ addProfileStyles();
+ createProfile();
+
+ const previousRender=render;
+
+ render=function(){
+  previousRender();
+  updateProfile();
+ };
+
+ render();
+})();
+
