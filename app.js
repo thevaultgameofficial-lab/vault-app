@@ -1279,7 +1279,19 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   document.getElementById("vpAvatar").textContent=avatar;
   document.getElementById("vpName").textContent=name;
   document.getElementById("vpRank").textContent=
-   language==="fr"?"ARCHIVISTE · SAISON 01":"ARCHIVIST · SEASON 01";
+    const equippedTitle = JSON.parse(localStorage.getItem("vault_mvp_01") || "{}").selectedVaultTitle || "archivist";
+const titleNames = {
+  archivist: {fr:"Archiviste", en:"Archivist"},
+  explorer: {fr:"Explorateur", en:"Explorer"},
+  regular: {fr:"Habitué", en:"Regular"},
+  veteran: {fr:"Vétéran", en:"Veteran"},
+  collector: {fr:"Collectionneur", en:"Collector"},
+  master: {fr:"Archiviste suprême", en:"Grand Archivist"},
+  experienced: {fr:"Érudit", en:"Scholar"},
+  guardian: {fr:"Gardien des reliques", en:"Relic Guardian"}
+};
+const currentTitle = titleNames[equippedTitle] || titleNames.archivist;
+   `${currentTitle[language === "fr" ? "fr" : "en"].toUpperCase()} · ${language==="fr"?"SAISON 01":"SEASON 01"}`;
 
   document.getElementById("vpNameInput").value=name;
   document.getElementById("vpAvatarInput").value=avatar;
