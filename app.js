@@ -3756,6 +3756,6 @@ render();
  }
 
  checkDeployment();
- setInterval(checkDeployment,8000);
+ setInterval(checkDeployment,3000);
 
 })();
