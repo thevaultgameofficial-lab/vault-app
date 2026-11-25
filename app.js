@@ -558,6 +558,58 @@ function setVaultDifficulty13(value){
  saveState()
 }
 
+  function createVaultDifficultyUI13(){
+ const questionText=document.getElementById("questionText");
+ if(!questionText)return;
+
+ const parent=questionText.parentElement;
+ if(document.getElementById("vaultDifficultyPanel13"))return;
+
+ const panel=document.createElement("div");
+ panel.id="vaultDifficultyPanel13";
+ panel.className="vault-difficulty13";
+
+ panel.innerHTML=`
+  <label for="vaultDifficultySelect13" id="vaultDifficultyLabel13"></label>
+  <select id="vaultDifficultySelect13">
+   <option value="easy">🟢 Facile — 25 XP</option>
+   <option value="normal">🔵 Normal — 50 XP</option>
+   <option value="hard">🟣 Difficile — 100 XP</option>
+  </select>
+  <div id="vaultDifficultyReward13"></div>
+ `;
+
+ parent.insertBefore(panel,questionText);
+
+ const select=panel.querySelector("select");
+
+ select.addEventListener("change",()=>{
+  setVaultDifficulty13(select.value);
+  updateVaultDifficultyUI13()
+ });
+
+ updateVaultDifficultyUI13()
+}
+
+function updateVaultDifficultyUI13(){
+ const panel=document.getElementById("vaultDifficultyPanel13");
+ if(!panel)return;
+
+ const select=document.getElementById("vaultDifficultySelect13");
+ const label=document.getElementById("vaultDifficultyLabel13");
+ const reward=document.getElementById("vaultDifficultyReward13");
+
+ const difficulty=getVaultDifficulty13();
+ const info=VAULT_DIFFICULTIES_13[difficulty];
+
+ label.textContent=language==="fr"?"CHOISIS TA DIFFICULTÉ":"CHOOSE YOUR DIFFICULTY";
+
+ select.value=difficulty;
+ select.disabled=state.completedDays.includes(todayKey());
+
+ reward.textContent=info[language]+" · "+info.xp+" XP";
+}
+  
  function text(fr,en){return language==="fr"?fr:en}
 
  function getImagePath(filename){
