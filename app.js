@@ -2877,3 +2877,296 @@ render();
 
  render();
 })();
+
+
+/* =========================================
+   VAULT 1.1 — WEEKLY SIDE MISSIONS
+========================================= */
+
+(()=>{
+ const PANEL_ID = "vaultMissions11";
+ const STYLE_ID = "vaultMissions11Styles";
+
+ const MISSIONS = [
+  {
+   id:"challenges",
+   icon:"⚔️",
+   name:"Persévérant",
+   description:"Terminer 3 défis",
+   target:3,
+   reward:50,
+   type:"challenges"
+  },
+  {
+   id:"xp",
+   icon:"✨",
+   name:"Enrichissement",
+   description:"Gagner 100 XP",
+   target:100,
+   reward:75,
+   type:"xp"
+  },
+  {
+   id:"artifacts",
+   icon:"🗝️",
+   name:"Collectionneur",
+   description:"Débloquer 1 artefact",
+   target:1,
+   reward:50,
+   type:"artifacts"
+  }
+ ];
+
+ function weekKey(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - ((d.getDay()+6)%7));
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+ }
+
+ function counts(){
+  return {
+   challenges:Array.isArray(state.completedDays) ? state.completedDays.length : 0,
+   xp:Number(state.xp)||0,
+   artifacts:Array.isArray(state.unlocked) ? state.unlocked.length : 0
+  };
+ }
+
+ function saveMissions(){
+  saveState();
+ }
+
+ function ensureData(){
+  const currentWeek = weekKey();
+  const current = counts();
+
+  if(!state.vaultMissions11 || state.vaultMissions11.week !== currentWeek){
+   state.vaultMissions11 = {
+    week:currentWeek,
+    baseChallenges:current.challenges,
+    baseXp:current.xp,
+    baseArtifacts:current.artifacts,
+    claimed:[]
+   };
+   saveMissions();
+  }
+
+  if(!Array.isArray(state.vaultMissions11.claimed)){
+   state.vaultMissions11.claimed = [];
+  }
+ }
+
+ function getProgress(mission){
+  const data = state.vaultMissions11;
+  const current = counts();
+
+  if(mission.type==="challenges"){
+   return Math.max(0,current.challenges-data.baseChallenges);
+  }
+
+  if(mission.type==="xp"){
+   return Math.max(0,current.xp-data.baseXp);
+  }
+
+  if(mission.type==="artifacts"){
+   return Math.max(0,current.artifacts-data.baseArtifacts);
+  }
+
+  return 0;
+ }
+
+ function addStyles(){
+  if(document.getElementById(STYLE_ID)) return;
+
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `
+   #${PANEL_ID}{
+    margin:18px 0;
+    padding:20px;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:16px;
+    background:rgba(20,25,45,.72);
+    color:inherit;
+   }
+   #${PANEL_ID} .vm11-subtitle{
+    opacity:.65;
+    font-size:12px;
+    margin:5px 0 18px;
+   }
+   #${PANEL_ID} .vm11-mission{
+    padding:14px 0;
+    border-top:1px solid rgba(255,255,255,.09);
+   }
+   #${PANEL_ID} .vm11-top{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+   }
+   #${PANEL_ID} .vm11-name{
+    font-weight:700;
+   }
+   #${PANEL_ID} .vm11-description{
+    opacity:.7;
+    font-size:13px;
+    margin-top:4px;
+   }
+   #${PANEL_ID} .vm11-reward{
+    font-size:12px;
+    white-space:nowrap;
+    opacity:.85;
+   }
+   #${PANEL_ID} .vm11-progress{
+    height:6px;
+    background:rgba(255,255,255,.12);
+    border-radius:10px;
+    overflow:hidden;
+    margin:12px 0 8px;
+   }
+   #${PANEL_ID} .vm11-progress-fill{
+    height:100%;
+    background:#a78bfa;
+    border-radius:10px;
+    transition:width .25s;
+   }
+   #${PANEL_ID} .vm11-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    font-size:12px;
+    opacity:.8;
+   }
+   #${PANEL_ID} .vm11-claim{
+    border:0;
+    border-radius:8px;
+    padding:8px 13px;
+    background:#a78bfa;
+    color:#171326;
+    font-weight:700;
+    cursor:pointer;
+   }
+   #${PANEL_ID} .vm11-claim:disabled{
+    opacity:.4;
+    cursor:default;
+   }
+  `;
+  document.head.appendChild(style);
+ }
+
+ function createPanel(){
+  if(document.getElementById(PANEL_ID)) return;
+
+  const profile = document.getElementById("profileView");
+  if(!profile) return;
+
+  const panel = document.createElement("section");
+  panel.id = PANEL_ID;
+
+  panel.innerHTML = `
+   <div style="font-size:18px;font-weight:800">
+    📜 MISSIONS SECONDAIRES
+   </div>
+   <div class="vm11-subtitle">
+    De nouveaux objectifs chaque semaine
+   </div>
+   <div id="vm11List"></div>
+  `;
+
+  const profileCard = document.getElementById("vaultPlayerProfile");
+
+  if(profileCard && profileCard.parentElement === profile){
+   profileCard.insertAdjacentElement("afterend",panel);
+  }else{
+   profile.prepend(panel);
+  }
+
+  panel.addEventListener("click",function(event){
+   const button = event.target.closest("[data-vm11-claim]");
+   if(!button) return;
+
+   const mission = MISSIONS.find(m=>m.id===button.dataset.vm11Claim);
+   if(!mission) return;
+
+   ensureData();
+
+   const progress = getProgress(mission);
+   const data = state.vaultMissions11;
+
+   if(progress < mission.target) return;
+   if(data.claimed.includes(mission.id)) return;
+
+   data.claimed.push(mission.id);
+   state.xp = (Number(state.xp)||0) + mission.reward;
+
+   // Ne pas compter les XP de cette récompense
+   // dans la progression de la mission XP.
+   if(mission.type==="xp"){
+    data.baseXp += mission.reward;
+   }
+
+   saveMissions();
+   render();
+  });
+ }
+
+ function updatePanel(){
+  ensureData();
+  createPanel();
+
+  const list = document.getElementById("vm11List");
+  if(!list) return;
+
+  list.innerHTML = MISSIONS.map(mission=>{
+   const progress = getProgress(mission);
+   const completed = progress >= mission.target;
+   const claimed = state.vaultMissions11.claimed.includes(mission.id);
+   const percent = Math.min(100,(progress/mission.target)*100);
+
+   let buttonText = "En cours";
+   if(claimed) buttonText = "Réclamée ✓";
+   else if(completed) buttonText = "Réclamer";
+
+   return `
+    <div class="vm11-mission">
+     <div class="vm11-top">
+      <div>
+       <div class="vm11-name">${mission.icon} ${mission.name}</div>
+       <div class="vm11-description">${mission.description}</div>
+      </div>
+      <div class="vm11-reward">+${mission.reward} XP</div>
+     </div>
+
+     <div class="vm11-progress">
+      <div class="vm11-progress-fill" style="width:${percent}%"></div>
+     </div>
+
+     <div class="vm11-bottom">
+      <span>${Math.min(progress,mission.target)} / ${mission.target}</span>
+      <button
+       class="vm11-claim"
+       data-vm11-claim="${mission.id}"
+       ${(!completed || claimed)?"disabled":""}>
+       ${buttonText}
+      </button>
+     </div>
+    </div>
+   `;
+  }).join("");
+ }
+
+ addStyles();
+ ensureData();
+
+ if(typeof render === "function"){
+  const previousRender = render;
+
+  render = function(){
+   previousRender();
+   updatePanel();
+  };
+
+  render();
+ }
+})();
