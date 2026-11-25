@@ -524,6 +524,82 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   const item=activeItem();
   return item?item.question:QUESTION
  }
+  /* =========================================
+    VAULT 1.3 — DIFFICULTY SYSTEM
+ ========================================= */
+
+ const DIFFICULTIES={
+  easy:{xp:25,fr:"Facile",en:"Easy",icon:"🟢"},
+  normal:{xp:50,fr:"Normal",en:"Normal",icon:"🔵"},
+  hard:{xp:100,fr:"Difficile",en:"Hard",icon:"🟣"}
+ };
+
+ function difficultyKey(){
+  return todayKey()+"_"+(activeItem()?.id||"original")
+ }
+
+ function getDifficulty(){
+  if(!state.vaultDifficulty13)state.vaultDifficulty13={};
+
+  const saved=state.vaultDifficulty13[difficultyKey()];
+  return saved&&DIFFICULTIES[saved]?saved:"normal"
+ }
+
+ function setDifficulty(value){
+  if(!DIFFICULTIES[value])return;
+  if(!state.vaultDifficulty13)state.vaultDifficulty13={};
+
+  state.vaultDifficulty13[difficultyKey()]=value;
+  saveState();
+ }
+
+ function getDifficultyReward(){
+  return DIFFICULTIES[getDifficulty()].xp
+ }
+
+ function addDifficultyStyles(){
+  if(document.getElementById("vaultDifficulty13Styles"))return;
+
+  const style=document.createElement("style");
+  style.id="vaultDifficulty13Styles";
+  style.textContent=`
+   .vault-difficulty13{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+    margin:0 auto 18px;
+    max-width:360px;
+    text-align:center;
+   }
+   .vault-difficulty13 label{
+    color:#aebbd2;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+   }
+   .vault-difficulty13 select{
+    width:100%;
+    box-sizing:border-box;
+    padding:12px;
+    border:1px solid #485675;
+    border-radius:9px;
+    background:#10182a;
+    color:white;
+    font-size:14px;
+    font-weight:700;
+   }
+   .vault-difficulty13 .difficulty-reward{
+    color:#b7a5ff;
+    font-size:12px;
+    font-weight:800;
+   }
+   .vault-difficulty13 select:disabled{
+    opacity:.6;
+   }
+  `;
+  document.head.appendChild(style)
+ }
 
  function text(fr,en){return language==="fr"?fr:en}
 
@@ -949,7 +1025,10 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
  }
 
  // Affichage du défi actif : titre, image, puis question.
+  // VAULT 1.3 — affichage du défi et de sa difficulté.
  renderChallenge=function(){
+  addDifficultyStyles();
+
   const done=state.completedDays.includes(todayKey());
   const q=activeQuestion()[language];
   const item=activeItem();
@@ -974,6 +1053,48 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
    parent.insertBefore(imageElement,questionText)
   }
 
+  // Sélecteur de difficulté.
+  let difficultyPanel=document.getElementById("vaultDifficulty13");
+
+  if(!difficultyPanel){
+   difficultyPanel=document.createElement("div");
+   difficultyPanel.id="vaultDifficulty13";
+   difficultyPanel.className="vault-difficulty13";
+
+   difficultyPanel.innerHTML=`
+    <label for="vaultDifficultySelect13" id="vaultDifficultyLabel13"></label>
+    <select id="vaultDifficultySelect13">
+     <option value="easy">🟢 Facile — 25 XP</option>
+     <option value="normal">🔵 Normal — 50 XP</option>
+     <option value="hard">🟣 Difficile — 100 XP</option>
+    </select>
+    <div class="difficulty-reward" id="vaultDifficultyReward13"></div>
+   `;
+
+   parent.insertBefore(difficultyPanel,questionText);
+
+   document.getElementById("vaultDifficultySelect13").addEventListener("change",event=>{
+    if(state.completedDays.includes(todayKey()))return;
+
+    setDifficulty(event.target.value);
+    renderChallenge()
+   })
+  }
+
+  const difficulty=getDifficulty();
+  const difficultyInfo=DIFFICULTIES[difficulty];
+  const difficultySelect=document.getElementById("vaultDifficultySelect13");
+
+  document.getElementById("vaultDifficultyLabel13").textContent=
+   text("CHOISIS TA DIFFICULTÉ","CHOOSE YOUR DIFFICULTY");
+
+  difficultySelect.value=difficulty;
+  difficultySelect.disabled=done;
+
+  document.getElementById("vaultDifficultyReward13").textContent=
+   difficultyInfo[language]
+   " · "+difficultyInfo.xp+" XP";
+
   const title=item
    ?(language==="fr"?(item.titleFr||item.name):(item.titleEn||item.name))
    :"";
@@ -990,7 +1111,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   if(imagePath){
    imageElement.onerror=()=>{imageElement.style.display="none"};
    imageElement.onload=()=>{imageElement.style.display="block"};
-   imageElement.src=imagePath;
+   imageElement.src=imagePath
   }else{
    imageElement.removeAttribute("src");
    imageElement.style.display="none"
@@ -1025,10 +1146,12 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
    button.className="answer-option"+(selectedAnswer===index?" selected":"");
    button.textContent=answer;
    button.disabled=done;
+
    button.addEventListener("click",()=>{
     selectedAnswer=index;
     renderChallenge()
    });
+
    grid.appendChild(button)
   });
 
@@ -1037,9 +1160,10 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
 
   document.getElementById("challengeFoot").textContent=done
    ?t("challengeDone")
-   :"+50 XP · "+(language==="fr"?"Une seule validation par jour":"One completion per day");
+   :getDifficultyReward()+" XP · "+(language==="fr"?"Une seule validation par jour":"One completion per day");
 
   const feedback=document.getElementById("feedback");
+
   if(done){
    feedback.textContent=t("alreadyDone");
    feedback.className="feedback"
@@ -1050,6 +1174,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
  };
 
  // Validation du défi actif.
+  // VAULT 1.3 — validation avec récompense adaptée.
  completeChallenge=function(){
   if(state.completedDays.includes(todayKey())){
    showToast(t("alreadyDone"));
@@ -1069,7 +1194,9 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   }
 
   const oldLevel=level();
-  state.xp+=50;
+  const earnedXP=getDifficultyReward();
+
+  state.xp+=earnedXP;
   state.completedDays.push(todayKey());
 
   ARTIFACTS.forEach(artifact=>{
@@ -1081,22 +1208,13 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   saveState();
   selectedAnswer=null;
   render();
-  showToast(level()>oldLevel?t("levelUp"):t("correct"))
+
+  showToast(
+   level()>oldLevel
+    ?t("levelUp")
+    :text("Bravo ! +"+earnedXP+" XP", "Well done! +"+earnedXP+" XP")
+  )
  };
-
- addLibraryStyles();
- createLibraryUI();
-
- const previousRender=render;
- render=function(){
-  previousRender();
-  renderChallenge();
-  updateLibraryLanguage()
- };
-
- render();
-})();
-
 
 /* =========================================
    VAULT — PLAYER PROFILE 0.5
