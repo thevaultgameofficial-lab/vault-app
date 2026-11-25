@@ -525,6 +525,39 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   return item?item.question:QUESTION
  }
 
+  /* VAULT 1.3 — DIFFICULTY DATA */
+
+const VAULT_DIFFICULTIES_13={
+ easy:{xp:25,fr:"Facile",en:"Easy"},
+ normal:{xp:50,fr:"Normal",en:"Normal"},
+ hard:{xp:100,fr:"Difficile",en:"Hard"}
+};
+
+function vaultDifficultyKey13(){
+ return todayKey()+"_"+(activeItem()?.id||"original")
+}
+
+function getVaultDifficulty13(){
+ if(!state.vaultDifficulty13){
+  state.vaultDifficulty13={}
+ }
+
+ const saved=state.vaultDifficulty13[vaultDifficultyKey13()];
+
+ return VAULT_DIFFICULTIES_13[saved]?saved:"normal"
+}
+
+function setVaultDifficulty13(value){
+ if(!VAULT_DIFFICULTIES_13[value])return;
+
+ if(!state.vaultDifficulty13){
+  state.vaultDifficulty13={}
+ }
+
+ state.vaultDifficulty13[vaultDifficultyKey13()]=value;
+ saveState()
+}
+
  function text(fr,en){return language==="fr"?fr:en}
 
  function getImagePath(filename){
