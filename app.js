@@ -590,6 +590,9 @@ function setVaultDifficulty13(value){
 
  updateVaultDifficultyUI13()
 }
+  function getVaultDifficultyReward13(){
+ return VAULT_DIFFICULTIES_13[getVaultDifficulty13()].xp
+}
 
 function updateVaultDifficultyUI13(){
  const panel=document.getElementById("vaultDifficultyPanel13");
@@ -1036,13 +1039,10 @@ function updateVaultDifficultyUI13(){
  // Affichage du défi actif : titre, image, puis question.
  renderChallenge=function(){
   const done=state.completedDays.includes(todayKey());
-  const q=activeQuestion()[language];
-   createVaultDifficultyUI13();
+const q=activeQuestion()[language];
+createVaultDifficultyUI13();
 updateVaultDifficultyUI13();
-   function getVaultDifficultyReward13(){
- return VAULT_DIFFICULTIES_13[getVaultDifficulty13()].xp
-}
-  const item=activeItem();
+const item=activeItem();
 
   const questionText=document.getElementById("questionText");
   const parent=questionText.parentElement;
@@ -1125,11 +1125,9 @@ updateVaultDifficultyUI13();
   document.getElementById("submitAnswer").disabled=done;
   document.getElementById("submitAnswer").style.opacity=done?".5":"1";
 
-  document.getElementById("challengeFoot").textContent=done
+ document.getElementById("challengeFoot").textContent=done
  ?t("challengeDone")
  :getVaultDifficultyReward13()+" XP · "+(language==="fr"?"Une seule validation par jour":"One completion per day");
-   ?t("challengeDone")
-   :"+50 XP · "+(language==="fr"?"Une seule validation par jour":"One completion per day");
 
   const feedback=document.getElementById("feedback");
   if(done){
