@@ -3658,3 +3658,104 @@ render();
   render();
  }
 })();
+
+
+/* =========================================
+   VAULT — DEPLOYMENT STATUS 0.1
+========================================= */
+
+(function(){
+
+ const badge=document.createElement("div");
+ badge.id="vaultDeploymentStatus";
+
+ const style=document.createElement("style");
+ style.textContent=`
+  #vaultDeploymentStatus{
+   position:fixed;
+   top:14px;
+   right:14px;
+   z-index:99999;
+   display:flex;
+   align-items:center;
+   gap:9px;
+   padding:10px 14px;
+   border-radius:30px;
+   background:#202638;
+   border:1px solid #536078;
+   color:white;
+   font:600 11px Arial,sans-serif;
+   box-shadow:0 4px 18px #0005;
+  }
+  #vaultDeploymentStatus .vault-status-dot{
+   width:9px;
+   height:9px;
+   border-radius:50%;
+   flex-shrink:0;
+   background:#9ca3af;
+  }
+  #vaultDeploymentStatus.pending .vault-status-dot{
+   background:#f59e0b;
+   animation:vaultPulse 1s infinite;
+  }
+  #vaultDeploymentStatus.ready .vault-status-dot{
+   background:#22c55e;
+  }
+  #vaultDeploymentStatus.error .vault-status-dot{
+   background:#9ca3af;
+  }
+  @keyframes vaultPulse{
+   50%{opacity:.25;transform:scale(.7)}
+  }
+ `;
+
+ document.head.appendChild(style);
+ document.body.appendChild(badge);
+
+ const sourceURL=
+  "https://raw.githubusercontent.com/thevaultgameofficial-lab/vault-app/main/app.js";
+
+ async function checkDeployment(){
+
+  try{
+   const version=Date.now();
+
+   badge.className="pending";
+   badge.innerHTML=
+    '<span class="vault-status-dot"></span><span>Vérification des mises à jour…</span>';
+
+   const responses=await Promise.all([
+    fetch(sourceURL+"?v="+version,{cache:"no-store"}),
+    fetch("./app.js?v="+version,{cache:"no-store"})
+   ]);
+
+   if(!responses[0].ok||!responses[1].ok){
+    throw new Error("Version inaccessible");
+   }
+
+   const versions=await Promise.all([
+    responses[0].text(),
+    responses[1].text()
+   ]);
+
+   if(versions[0]===versions[1]){
+    badge.className="ready";
+    badge.innerHTML=
+     '<span class="vault-status-dot"></span><span>VAULT est à jour — Recharge possible</span>';
+   }else{
+    badge.className="pending";
+    badge.innerHTML=
+     '<span class="vault-status-dot"></span><span>Mise à jour en cours — Ne recharge pas</span>';
+   }
+
+  }catch(error){
+   badge.className="error";
+   badge.innerHTML=
+    '<span class="vault-status-dot"></span><span>Vérification indisponible</span>';
+  }
+ }
+
+ checkDeployment();
+ setInterval(checkDeployment,8000);
+
+})();
