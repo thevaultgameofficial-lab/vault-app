@@ -1276,7 +1276,8 @@ const item=activeItem();
     :text("Bravo ! +"+earnedXP+" XP","Well done! +"+earnedXP+" XP")
   )
  };
-
+ addLibraryStyles();
+ createLibraryUI();
   })();
 
 /* =========================================
