@@ -121,14 +121,20 @@ function completeChallenge(){
   return
  }
  const oldLevel=level();
- state.xp+=50;
- state.completedDays.push(todayKey());
+const earnedXP=getVaultDifficultyReward13();
+
+state.xp+=earnedXP;
+state.completedDays.push(todayKey());
  ARTIFACTS.forEach(a=>{
   if(state.xp>=a.xp&&!state.unlocked.includes(a.id))state.unlocked.push(a.id)
  });
  saveState();
  render();
- showToast(level()>oldLevel?t('levelUp'):t('correct'));
+ showToast(
+ level()>oldLevel
+  ?t("levelUp")
+  :text("Bravo ! +"+earnedXP+" XP","Well done! +"+earnedXP+" XP")
+)
  selectedAnswer=null;
 }
 
