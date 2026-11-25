@@ -1277,6 +1277,7 @@ const item=activeItem();
   )
  };
 
+  })();
 
 /* =========================================
    VAULT — PLAYER PROFILE 0.5
