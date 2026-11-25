@@ -1223,7 +1223,9 @@ const item=activeItem();
   }
 
   const oldLevel=level();
-  state.xp+=50;
+  const earnedXP=getVaultDifficultyReward13();
+
+  state.xp+=earnedXP;
   state.completedDays.push(todayKey());
 
   ARTIFACTS.forEach(artifact=>{
@@ -1235,21 +1237,12 @@ const item=activeItem();
   saveState();
   selectedAnswer=null;
   render();
-  showToast(level()>oldLevel?t("levelUp"):t("correct"))
+  showToast(
+   level()>oldLevel
+    ?t("levelUp")
+    :text("Bravo ! +"+earnedXP+" XP","Well done! +"+earnedXP+" XP")
+  )
  };
-
- addLibraryStyles();
- createLibraryUI();
-
- const previousRender=render;
- render=function(){
-  previousRender();
-  renderChallenge();
-  updateLibraryLanguage()
- };
-
- render();
-})();
 
 
 /* =========================================
