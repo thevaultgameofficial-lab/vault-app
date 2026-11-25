@@ -575,12 +575,12 @@ function setVaultDifficulty13(value){
  panel.id="vaultDifficultyPanel13";
  panel.className="vault-difficulty13";
 
- panel.innerHTML=`
+panel.innerHTML=`
   <label for="vaultDifficultySelect13" id="vaultDifficultyLabel13"></label>
   <select id="vaultDifficultySelect13">
-   <option value="easy">🟢 Facile — 25 XP</option>
+   <option value="easy">🟢 Easy — 25 XP</option>
    <option value="normal">🔵 Normal — 50 XP</option>
-   <option value="hard">🟣 Difficile — 100 XP</option>
+   <option value="hard">🟣 Hard — 100 XP</option>
   </select>
   <div id="vaultDifficultyReward13"></div>
  `;
@@ -613,6 +613,15 @@ function updateVaultDifficultyUI13(){
 
  label.textContent=language==="fr"?"CHOISIS TA DIFFICULTÉ":"CHOOSE YOUR DIFFICULTY";
 
+  const options={
+ easy:language==="fr"?"🟢 Facile — 25 XP":"🟢 Easy — 25 XP",
+ normal:language==="fr"?"🔵 Normal — 50 XP":"🔵 Normal — 50 XP",
+ hard:language==="fr"?"🟣 Difficile — 100 XP":"🟣 Hard — 100 XP"
+};
+
+Object.keys(options).forEach(key=>{
+ select.querySelector('option[value="'+key+'"]').textContent=options[key];
+});
  select.value=difficulty;
  select.disabled=state.completedDays.includes(todayKey());
 
