@@ -357,9 +357,8 @@ function renderArtifacts(){
  ARTIFACTS.forEach(a=>{
   const unlocked=state.unlocked.includes(a.id);
   const card=document.createElement('article');
-  card.className=`artifact-card panel ${unlocked?'':'locked'}`;
-  card.innerHTML=`<span class="unlock-tag">${unlocked?'✓':t('locked')}</span><div class="artifact-symbol">${unlocked?a.symbol:'?'}</div><span class="rarity">${a.rarity}</span><h3>${unlocked?a.name[language]:'???'}</h3><p class="muted">${unlocked?a.desc[language]:`${t('unlockAt')} ${a.xp} XP`}</p>`;
-  grid.appendChild(card)
+  card.className=`artifact-card panel rarity-card-${a.rarity.toLowerCase()} ${unlocked?'':'locked'}`;
+card.innerHTML=`<span class="unlock-tag">${unlocked?'✓':t('locked')}</span><div class="artifact-symbol">${unlocked?a.symbol:'?'}</div><span class="rarity rarity-${a.rarity.toLowerCase()}">${a.rarity}</span><h3>${unlocked?a.name[language]:'???'}</h3><p class="muted">${unlocked?a.desc[language]:`${t('unlockAt')} ${a.xp} XP`}</p>`;  grid.appendChild(card)
  });
  const featured=ARTIFACTS[5];
  const has=state.unlocked.includes(featured.id);
