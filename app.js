@@ -601,8 +601,53 @@ panel.innerHTML=`
 }
 
 function updateVaultDifficultyUI13(){
-  function previewVaultDifficulties13(){
-    function addDifficultyPreviewButton13(){
+ const panel=document.getElementById("vaultDifficultyPanel13");
+ if(!panel)return;
+
+ const select=document.getElementById("vaultDifficultySelect13");
+ const label=document.getElementById("vaultDifficultyLabel13");
+ const reward=document.getElementById("vaultDifficultyReward13");
+
+ const difficulty=getVaultDifficulty13();
+ const info=VAULT_DIFFICULTIES_13[difficulty];
+
+ label.textContent=language==="fr"?"CHOISIS TA DIFFICULTÉ":"CHOOSE YOUR DIFFICULTY";
+
+ const options={
+  easy:language==="fr"?"🟢 Facile — 25 XP":"🟢 Easy — 25 XP",
+  normal:language==="fr"?"🔵 Normal — 50 XP":"🔵 Normal — 50 XP",
+  hard:language==="fr"?"🟣 Difficile — 100 XP":"🟣 Hard — 100 XP"
+ };
+
+ Object.keys(options).forEach(key=>{
+  select.querySelector('option[value="'+key+'"]').textContent=options[key];
+ });
+
+ select.value=difficulty;
+ select.disabled=state.completedDays.includes(todayKey());
+
+ reward.textContent=info[language]+" · "+info.xp+" XP";
+}
+
+function previewVaultDifficulties13(){
+ const current=getVaultDifficulty13();
+
+ const choices=[
+  {label:"Facile",xp:25},
+  {label:"Normal",xp:50},
+  {label:"Difficile",xp:100}
+ ];
+
+ const message=choices.map(item=>
+  item.label+" : "+item.xp+" XP"
+ ).join("\n");
+
+ alert("APERÇU DES DIFFICULTÉS\n\n"+message+
+  "\n\nDifficulté actuellement choisie : "+current.toUpperCase()+
+  "\n\nAucun XP attribué.");
+}
+
+function addDifficultyPreviewButton13(){
  const panel=document.getElementById("vaultDevPanel");
  if(!panel)return;
 
@@ -625,57 +670,7 @@ function updateVaultDifficultyUI13(){
  `;
 
  button.onclick=previewVaultDifficulties13;
-
- const anchor=document.getElementById("devData");
- if(anchor){
-  panel.insertBefore(button,anchor);
- }else{
-  panel.appendChild(button);
- }
-}
-
-addDifficultyPreviewButton13();
- const current=getVaultDifficulty13();
-
- const choices=[
-  {id:"easy",label:"Facile",xp:25},
-  {id:"normal",label:"Normal",xp:50},
-  {id:"hard",label:"Difficile",xp:100}
- ];
-
- const message=choices.map(item=>
-  item.label+" : "+item.xp+" XP"
- ).join("\n");
-
- alert("APERÇU DES DIFFICULTÉS\n\n"+message+
-  "\n\nDifficulté actuellement choisie : "+current.toUpperCase()+
-  "\n\nAucun XP attribué.");
-}
- const panel=document.getElementById("vaultDifficultyPanel13");
- if(!panel)return;
-
- const select=document.getElementById("vaultDifficultySelect13");
- const label=document.getElementById("vaultDifficultyLabel13");
- const reward=document.getElementById("vaultDifficultyReward13");
-
- const difficulty=getVaultDifficulty13();
- const info=VAULT_DIFFICULTIES_13[difficulty];
-
- label.textContent=language==="fr"?"CHOISIS TA DIFFICULTÉ":"CHOOSE YOUR DIFFICULTY";
-
-  const options={
- easy:language==="fr"?"🟢 Facile — 25 XP":"🟢 Easy — 25 XP",
- normal:language==="fr"?"🔵 Normal — 50 XP":"🔵 Normal — 50 XP",
- hard:language==="fr"?"🟣 Difficile — 100 XP":"🟣 Hard — 100 XP"
-};
-
-Object.keys(options).forEach(key=>{
- select.querySelector('option[value="'+key+'"]').textContent=options[key];
-});
- select.value=difficulty;
- select.disabled=state.completedDays.includes(todayKey());
-
- reward.textContent=info[language]+" · "+info.xp+" XP";
+ panel.appendChild(button);
 }
   
  function text(fr,en){return language==="fr"?fr:en}
@@ -720,9 +715,13 @@ Object.keys(options).forEach(key=>{
   preview.src=getImagePath(filename)
  }
 
- function createLibraryUI(){
+function createLibraryUI(){
   const panel=document.getElementById("vaultDevPanel");
-  if(!panel||document.getElementById("vaultChallengeLibrary"))return;
+  if(!panel)return;
+
+  addDifficultyPreviewButton13();
+
+  if(document.getElementById("vaultChallengeLibrary"))return;
 
   const section=document.createElement("div");
   section.className="dev-section";
