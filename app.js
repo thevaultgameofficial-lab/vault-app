@@ -3170,3 +3170,272 @@ render();
   render();
  }
 })();
+
+
+/* =========================================
+   VAULT 1.2 — SPECIAL EVENT
+   THE AWAKENING OF RELICS
+========================================= */
+
+(()=>{
+ const PANEL_ID = "vaultEvent12";
+ const STYLE_ID = "vaultEvent12Styles";
+ const EVENT_DURATION = 7 * 24 * 60 * 60 * 1000;
+
+ const OBJECTIVES = [
+  {id:"first",icon:"📜",name:"Le premier éveil",desc:"Terminer 1 défi",target:1,type:"challenges",reward:50},
+  {id:"three",icon:"⚔️",name:"La persévérance",desc:"Terminer 3 défis",target:3,type:"challenges",reward:100},
+  {id:"xp",icon:"✨",name:"Énergie ancienne",desc:"Gagner 150 XP",target:150,type:"xp",reward:100},
+  {id:"artifact",icon:"🗝️",name:"La découverte",desc:"Débloquer 1 artefact",target:1,type:"artifacts",reward:100},
+  {id:"final",icon:"🏛️",name:"L'éveil ultime",desc:"Terminer 5 défis",target:5,type:"challenges",reward:200}
+ ];
+
+ function count(){
+  return {
+   challenges:Array.isArray(state.completedDays)?state.completedDays.length:0,
+   xp:Number(state.xp)||0,
+   artifacts:Array.isArray(state.unlocked)?state.unlocked.length:0
+  };
+ }
+
+ function init(){
+  if(!state.vaultEvent12){
+   const c=count();
+   state.vaultEvent12={
+    start:Date.now(),
+    baseChallenges:c.challenges,
+    baseXp:c.xp,
+    baseArtifacts:c.artifacts,
+    claimed:[],
+    completed:false
+   };
+   saveState();
+  }
+ }
+
+ function expired(){
+  return Date.now() >= state.vaultEvent12.start + EVENT_DURATION;
+ }
+
+ function progress(m){
+  const c=count();
+  const e=state.vaultEvent12;
+
+  if(m.type==="challenges")
+   return Math.max(0,c.challenges-e.baseChallenges);
+
+  if(m.type==="xp")
+   return Math.max(0,c.xp-e.baseXp);
+
+  if(m.type==="artifacts")
+   return Math.max(0,c.artifacts-e.baseArtifacts);
+
+  return 0;
+ }
+
+ function styles(){
+  if(document.getElementById(STYLE_ID))return;
+
+  const s=document.createElement("style");
+  s.id=STYLE_ID;
+  s.textContent=`
+   #${PANEL_ID}{
+    margin:20px 0;
+    padding:22px;
+    border:1px solid rgba(167,139,250,.35);
+    border-radius:18px;
+    background:linear-gradient(145deg,rgba(42,30,65,.95),rgba(17,24,39,.95));
+    color:inherit;
+   }
+   #${PANEL_ID} .ve12-muted{
+    opacity:.7;
+    font-size:12px;
+   }
+   #${PANEL_ID} .ve12-objective{
+    padding:15px 0;
+    border-top:1px solid rgba(255,255,255,.1);
+   }
+   #${PANEL_ID} .ve12-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+   }
+   #${PANEL_ID} .ve12-progress{
+    height:6px;
+    border-radius:10px;
+    background:rgba(255,255,255,.12);
+    overflow:hidden;
+    margin:10px 0;
+   }
+   #${PANEL_ID} .ve12-fill{
+    height:100%;
+    background:linear-gradient(90deg,#8b5cf6,#c4b5fd);
+   }
+   #${PANEL_ID} .ve12-btn{
+    border:0;
+    border-radius:8px;
+    padding:8px 13px;
+    font-weight:700;
+    background:#c4b5fd;
+    color:#241638;
+    cursor:pointer;
+   }
+   #${PANEL_ID} .ve12-btn:disabled{
+    opacity:.4;
+    cursor:default;
+   }
+   #${PANEL_ID} .ve12-banner{
+    padding:15px;
+    border-radius:12px;
+    background:rgba(167,139,250,.12);
+    margin:15px 0;
+   }
+  `;
+  document.head.appendChild(s);
+ }
+
+ function create(){
+  if(document.getElementById(PANEL_ID))return;
+
+  const profile=document.getElementById("profileView");
+  if(!profile)return;
+
+  const panel=document.createElement("section");
+  panel.id=PANEL_ID;
+
+  panel.innerHTML=`
+   <div style="font-size:20px;font-weight:900">
+    ✦ ÉVEIL DES RELIQUES
+   </div>
+   <div class="ve12-muted" style="margin-top:5px">
+    ÉVÉNEMENT SPÉCIAL · ÉDITION 01
+   </div>
+   <div id="ve12Countdown" class="ve12-banner"></div>
+   <div id="ve12Objectives"></div>
+   <div id="ve12Exclusive"></div>
+  `;
+
+  const profileCard=document.getElementById("vaultPlayerProfile");
+
+  if(profileCard && profileCard.parentElement===profile){
+   profileCard.insertAdjacentElement("afterend",panel);
+  }else{
+   profile.prepend(panel);
+  }
+
+  panel.addEventListener("click",function(event){
+   const btn=event.target.closest("[data-ve12]");
+   if(!btn)return;
+
+   const id=btn.dataset.ve12;
+   const obj=OBJECTIVES.find(x=>x.id===id);
+   if(!obj)return;
+
+   if(expired())return;
+
+   const e=state.vaultEvent12;
+   if(e.claimed.includes(id))return;
+   if(progress(obj)<obj.target)return;
+
+   e.claimed.push(id);
+   state.xp=(Number(state.xp)||0)+obj.reward;
+
+   if(id==="final"){
+    e.completed=true;
+    e.exclusiveRelic="🌌";
+   }
+
+   saveState();
+   render();
+  });
+ }
+
+ function update(){
+  init();
+  create();
+
+  const panel=document.getElementById(PANEL_ID);
+  if(!panel)return;
+
+  const countdown=document.getElementById("ve12Countdown");
+  const list=document.getElementById("ve12Objectives");
+  const exclusive=document.getElementById("ve12Exclusive");
+
+  if(expired()){
+   countdown.innerHTML="<strong>⏳ Événement terminé</strong><br><span class='ve12-muted'>L'Éveil des reliques est clos.</span>";
+  }else{
+   const remaining=state.vaultEvent12.start+EVENT_DURATION-Date.now();
+   const days=Math.floor(remaining/86400000);
+   const hours=Math.floor((remaining%86400000)/3600000);
+   const mins=Math.floor((remaining%3600000)/60000);
+
+   countdown.innerHTML=
+    "<strong>⏳ Temps restant</strong><br>"+
+    days+" j · "+hours+" h · "+mins+" min";
+  }
+
+  list.innerHTML=OBJECTIVES.map(m=>{
+   const p=progress(m);
+   const done=p>=m.target;
+   const claimed=state.vaultEvent12.claimed.includes(m.id);
+   const pct=Math.min(100,p/m.target*100);
+
+   let label="En cours";
+   if(claimed)label="Réclamé ✓";
+   else if(done)label="Réclamer";
+
+   return `
+    <div class="ve12-objective">
+     <div class="ve12-head">
+      <div>
+       <strong>${m.icon} ${m.name}</strong>
+       <div class="ve12-muted">${m.desc}</div>
+      </div>
+      <strong>+${m.reward} XP</strong>
+     </div>
+     <div class="ve12-progress">
+      <div class="ve12-fill" style="width:${pct}%"></div>
+     </div>
+     <div class="ve12-head">
+      <span class="ve12-muted">${Math.min(p,m.target)} / ${m.target}</span>
+      <button class="ve12-btn"
+       data-ve12="${m.id}"
+       ${(!done||claimed||expired())?"disabled":""}>
+       ${label}
+      </button>
+     </div>
+    </div>
+   `;
+  }).join("");
+
+  exclusive.innerHTML=state.vaultEvent12.completed?`
+   <div class="ve12-banner">
+    <div style="font-size:22px">🌌</div>
+    <strong>Relique exclusive obtenue</strong>
+    <div class="ve12-muted">Le Sceau de l'Éveil — Édition 01</div>
+   </div>
+  `:`
+   <div class="ve12-banner">
+    <strong>🌌 Récompense ultime</strong>
+    <div class="ve12-muted">
+     Terminez l'objectif final pour obtenir le Sceau de l'Éveil.
+    </div>
+   </div>
+  `;
+ }
+
+ styles();
+ init();
+
+ if(typeof render==="function"){
+  const previousRender=render;
+
+  render=function(){
+   previousRender();
+   update();
+  };
+
+  render();
+ }
+})();
