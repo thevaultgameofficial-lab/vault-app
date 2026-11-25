@@ -601,6 +601,56 @@ panel.innerHTML=`
 }
 
 function updateVaultDifficultyUI13(){
+  function previewVaultDifficulties13(){
+    function addDifficultyPreviewButton13(){
+ const panel=document.getElementById("vaultDevPanel");
+ if(!panel)return;
+
+ if(document.getElementById("devDifficultyPreview13"))return;
+
+ const button=document.createElement("button");
+ button.id="devDifficultyPreview13";
+ button.textContent="🎚️ Aperçu des difficultés";
+
+ button.style.cssText=`
+  display:block;
+  width:100%;
+  margin:12px 0;
+  padding:12px;
+  border:1px solid #8b5cf6;
+  border-radius:10px;
+  background:#211638;
+  color:#fff;
+  cursor:pointer;
+ `;
+
+ button.onclick=previewVaultDifficulties13;
+
+ const anchor=document.getElementById("devData");
+ if(anchor){
+  panel.insertBefore(button,anchor);
+ }else{
+  panel.appendChild(button);
+ }
+}
+
+addDifficultyPreviewButton13();
+ const current=getVaultDifficulty13();
+
+ const choices=[
+  {id:"easy",label:"Facile",xp:25},
+  {id:"normal",label:"Normal",xp:50},
+  {id:"hard",label:"Difficile",xp:100}
+ ];
+
+ const message=choices.map(item=>
+  item.label+" : "+item.xp+" XP"
+ ).join("\n");
+
+ alert("APERÇU DES DIFFICULTÉS\n\n"+message+
+  "\n\nDifficulté actuellement choisie : "+current.toUpperCase()+
+  "\n\nAucun XP attribué.");
+}
  const panel=document.getElementById("vaultDifficultyPanel13");
  if(!panel)return;
 
