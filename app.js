@@ -2273,3 +2273,320 @@ render();
   }
 
 })();
+
+
+/* =========================================
+   VAULT — ARCHIVIST RANKS 0.9
+========================================= */
+
+(()=>{
+ const PANEL_ID="vaultRanks09";
+ const STYLE_ID="vaultRanks09Styles";
+
+ const RANKS=[
+  {id:"novice",fr:"Novice",en:"Novice",icon:"📜",points:0},
+  {id:"explorer",fr:"Explorateur",en:"Explorer",icon:"🧭",points:100},
+  {id:"collector",fr:"Collectionneur",en:"Collector",icon:"🗝️",points:250},
+  {id:"guardian",fr:"Gardien",en:"Guardian",icon:"🛡️",points:500},
+  {id:"master",fr:"Maître archiviste",en:"Master Archivist",icon:"🏛️",points:900},
+  {id:"legend",fr:"Légende",en:"Legend",icon:"👑",points:1500},
+  {id:"mythic",fr:"Archiviste mythique",en:"Mythic Archivist",icon:"💎",points:2500}
+ ];
+
+ function getScore(){
+  return (Number(state.xp)||0)
+   +((state.completedDays||[]).length*10)
+   +((state.unlocked||[]).length*25)
+   +((state.achievements||[]).length*50);
+ }
+
+ function getRank(score){
+  let result=RANKS[0];
+
+  RANKS.forEach(rank=>{
+   if(score>=rank.points)result=rank;
+  });
+
+  return result;
+ }
+
+ function addStyles(){
+  if(document.getElementById(STYLE_ID))return;
+
+  const style=document.createElement("style");
+  style.id=STYLE_ID;
+  style.textContent=`
+   #${PANEL_ID}{
+    background:linear-gradient(135deg,#171c2b,#29213e);
+    border:1px solid #6654a8;
+    border-radius:16px;
+    padding:20px;
+    margin:0 0 22px;
+    color:white;
+   }
+   #${PANEL_ID} .vr-heading{
+    font-size:11px;
+    letter-spacing:2px;
+    color:#b7a5ff;
+    font-weight:800;
+    margin-bottom:18px;
+   }
+   #${PANEL_ID} .vr-current{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:18px;
+   }
+   #${PANEL_ID} .vr-icon{
+    width:58px;
+    height:58px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#30264f;
+    border:1px solid #806acb;
+    border-radius:14px;
+    font-size:29px;
+    flex-shrink:0;
+   }
+   #${PANEL_ID} .vr-name{
+    font-size:19px;
+    font-weight:800;
+   }
+   #${PANEL_ID} .vr-score{
+    color:#b7a5ff;
+    font-size:11px;
+    margin-top:5px;
+   }
+   #${PANEL_ID} .vr-progress-info{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    font-size:10px;
+    color:#aebbd2;
+    margin-bottom:8px;
+   }
+   #${PANEL_ID} .vr-track{
+    height:9px;
+    background:#0c1220;
+    border-radius:20px;
+    overflow:hidden;
+    border:1px solid #30394e;
+   }
+   #${PANEL_ID} .vr-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#806acb,#c2a5ff);
+    border-radius:20px;
+    transition:width .3s ease;
+   }
+   #${PANEL_ID} .vr-next{
+    font-size:10px;
+    color:#aebbd2;
+    margin-top:8px;
+   }
+   #${PANEL_ID} .vr-history-title{
+    font-size:10px;
+    letter-spacing:1.5px;
+    color:#b7a5ff;
+    margin:22px 0 10px;
+    font-weight:800;
+   }
+   #${PANEL_ID} .vr-history{
+    display:grid;
+    gap:7px;
+   }
+   #${PANEL_ID} .vr-history-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:9px 11px;
+    background:#0c1220;
+    border:1px solid #30394e;
+    border-radius:8px;
+    font-size:11px;
+   }
+   #${PANEL_ID} .vr-history-item span:last-child{
+    color:#9b8acb;
+    font-size:10px;
+   }
+  `;
+  document.head.appendChild(style);
+ }
+
+ function createPanel(){
+  const view=document.getElementById("profileView");
+  if(!view||document.getElementById(PANEL_ID))return;
+
+  const panel=document.createElement("section");
+  panel.id=PANEL_ID;
+
+  panel.innerHTML=`
+   <div class="vr-heading">🏆 <span id="vrHeading"></span></div>
+
+   <div class="vr-current">
+    <div class="vr-icon" id="vrIcon"></div>
+    <div>
+     <div class="vr-name" id="vrName"></div>
+     <div class="vr-score" id="vrScore"></div>
+    </div>
+   </div>
+
+   <div class="vr-progress-info">
+    <span id="vrProgressLabel"></span>
+    <span id="vrProgressNumbers"></span>
+   </div>
+
+   <div class="vr-track">
+    <div class="vr-fill" id="vrProgressBar"></div>
+   </div>
+
+   <div class="vr-next" id="vrNext"></div>
+
+   <div class="vr-history-title" id="vrHistoryTitle"></div>
+   <div class="vr-history" id="vrHistory"></div>
+  `;
+
+  const profile=document.getElementById("vaultPlayerProfile");
+
+  if(profile){
+   profile.insertAdjacentElement("afterend",panel);
+  }else{
+   view.prepend(panel);
+  }
+ }
+
+ function setText(id,value){
+  const element=document.getElementById(id);
+  if(element&&element.textContent!==String(value)){
+   element.textContent=value;
+  }
+ }
+
+ function updateRanks(){
+  const panel=document.getElementById(PANEL_ID);
+  if(!panel)return;
+
+  const lang=language==="fr"?"fr":"en";
+  const score=getScore();
+
+  if(!Array.isArray(state.vaultRankHistory)){
+   state.vaultRankHistory=[];
+  }
+
+  let changed=false;
+
+  // Enregistrer les nouveaux rangs obtenus
+  RANKS.forEach(rank=>{
+   if(score>=rank.points&&
+      !state.vaultRankHistory.some(item=>item.id===rank.id)){
+    state.vaultRankHistory.push({
+     id:rank.id,
+     date:new Date().toISOString()
+    });
+    changed=true;
+   }
+  });
+
+  if(changed)saveState();
+
+  const history=state.vaultRankHistory;
+  const highestHistory=history.reduce((highest,item)=>{
+   const found=RANKS.find(rank=>rank.id===item.id);
+   return found&&found.points>highest.points?found:highest;
+  },RANKS[0]);
+
+  const currentRank=getRank(Math.max(score,highestHistory.points));
+  const currentIndex=RANKS.findIndex(rank=>rank.id===currentRank.id);
+  const nextRank=RANKS[currentIndex+1];
+
+  setText("vrHeading",lang==="fr"?"VOTRE RANG":"YOUR RANK");
+  setText("vrIcon",currentRank.icon);
+  setText("vrName",currentRank[lang]);
+  setText("vrScore",score+" "+(lang==="fr"?"POINTS DE RANG":"RANK POINTS"));
+
+  let percentage=100;
+  let remaining=0;
+
+  if(nextRank){
+   const range=nextRank.points-currentRank.points;
+   const progress=score-currentRank.points;
+   percentage=Math.max(0,Math.min(100,(progress/range)*100));
+   remaining=Math.max(0,nextRank.points-score);
+  }
+
+  const bar=document.getElementById("vrProgressBar");
+  if(bar)bar.style.width=percentage+"%";
+
+  setText("vrProgressLabel",
+   lang==="fr"?"PROCHAIN RANG":"NEXT RANK");
+
+  setText("vrProgressNumbers",
+   nextRank?score+"/"+nextRank.points:"MAXIMUM");
+
+  setText("vrNext",
+   nextRank
+    ?(lang==="fr"
+      ?"Encore "+remaining+" points pour devenir "+nextRank.fr
+      :remaining+" more points to become "+nextRank.en)
+    :(lang==="fr"?"Rang maximum atteint !":"Maximum rank reached!"));
+
+  setText("vrHistoryTitle",
+   lang==="fr"?"HISTORIQUE DES RANGS":"RANK HISTORY");
+
+  const historyElement=document.getElementById("vrHistory");
+
+  const historyHTML=history
+   .slice()
+   .sort((a,b)=>{
+    const rankA=RANKS.find(r=>r.id===a.id);
+    const rankB=RANKS.find(r=>r.id===b.id);
+    return (rankB?.points||0)-(rankA?.points||0);
+   })
+   .map(item=>{
+    const rank=RANKS.find(r=>r.id===item.id);
+    if(!rank)return "";
+
+    const date=new Date(item.date).toLocaleDateString(
+     lang==="fr"?"fr-FR":"en-GB"
+    );
+
+    return `
+     <div class="vr-history-item">
+      <span>${rank.icon} ${rank[lang]}</span>
+      <span>${date}</span>
+     </div>
+    `;
+   }).join("");
+
+  if(historyElement&&historyElement.innerHTML!==historyHTML){
+   historyElement.innerHTML=historyHTML;
+  }
+ }
+
+ addStyles();
+ createPanel();
+
+ const previousRender=render;
+
+ render=function(){
+  previousRender();
+  createPanel();
+  updateRanks();
+ };
+
+ const observer=new MutationObserver(()=>{
+  if(!document.getElementById(PANEL_ID)){
+   createPanel();
+  }
+  updateRanks();
+ });
+
+ observer.observe(document.body,{
+  childList:true,
+  subtree:true
+ });
+
+ render();
+})();
