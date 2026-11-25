@@ -1037,6 +1037,11 @@ function updateVaultDifficultyUI13(){
  renderChallenge=function(){
   const done=state.completedDays.includes(todayKey());
   const q=activeQuestion()[language];
+   createVaultDifficultyUI13();
+updateVaultDifficultyUI13();
+   function getVaultDifficultyReward13(){
+ return VAULT_DIFFICULTIES_13[getVaultDifficulty13()].xp
+}
   const item=activeItem();
 
   const questionText=document.getElementById("questionText");
@@ -1121,6 +1126,8 @@ function updateVaultDifficultyUI13(){
   document.getElementById("submitAnswer").style.opacity=done?".5":"1";
 
   document.getElementById("challengeFoot").textContent=done
+ ?t("challengeDone")
+ :getVaultDifficultyReward13()+" XP · "+(language==="fr"?"Une seule validation par jour":"One completion per day");
    ?t("challengeDone")
    :"+50 XP · "+(language==="fr"?"Une seule validation par jour":"One completion per day");
 
