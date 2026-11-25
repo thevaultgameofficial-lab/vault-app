@@ -1,16 +1,268 @@
 
+
 const ARTIFACTS = [
-  {id:'coin',name:{en:'Ancient Coin',fr:'Pièce antique'},desc:{en:'A small token from a forgotten age.',fr:'Un petit vestige d’une époque oubliée.'},rarity:'COMMON',symbol:'◉',xp:0},
-  {id:'shard',name:{en:'Dusk Shard',fr:'Éclat du crépuscule'},desc:{en:'A fragment that catches the last light.',fr:'Un fragment qui capte la dernière lumière.'},rarity:'COMMON',symbol:'✦',xp:50},
-  {id:'seal',name:{en:'Royal Seal',fr:'Sceau royal'},desc:{en:'The mark of an unnamed dynasty.',fr:'La marque d’une dynastie oubliée.'},rarity:'UNCOMMON',symbol:'❖',xp:100},
-  {id:'key',name:{en:'Silent Key',fr:'Clé silencieuse'},desc:{en:'It opens a door no map remembers.',fr:'Elle ouvre une porte qu’aucune carte ne connaît.'},rarity:'UNCOMMON',symbol:'⚿',xp:150},
-  {id:'lens',name:{en:'Moon Lens',fr:'Lentille lunaire'},desc:{en:'A lens made for seeing beyond.',fr:'Une lentille conçue pour voir au-delà.'},rarity:'RARE',symbol:'◈',xp:200},
-  {id:'compass',name:{en:'Astral Compass',fr:'Boussole astrale'},desc:{en:'A relic said to point toward forgotten places.',fr:'Une relique qui indiquerait les lieux oubliés.'},rarity:'RARE',symbol:'✥',xp:250},
-  {id:'crown',name:{en:'Forgotten Crown',fr:'Couronne oubliée'},desc:{en:'Its kingdom has vanished from history.',fr:'Son royaume a disparu de l’histoire.'},rarity:'EPIC',symbol:'♕',xp:300},
-  {id:'hourglass',name:{en:'Glass of Hours',fr:'Sablier des heures'},desc:{en:'Its sand never falls the same way twice.',fr:'Son sable ne s’écoule jamais deux fois pareil.'},rarity:'EPIC',symbol:'⌛',xp:350},
-  {id:'heart',name:{en:'Ember Heart',fr:'Cœur de braise'},desc:{en:'A warm light sealed in ancient stone.',fr:'Une lumière chaude scellée dans la pierre.'},rarity:'LEGENDARY',symbol:'♥',xp:400},
-  {id:'star',name:{en:'Eternal Star',fr:'Étoile éternelle'},desc:{en:'The final piece of the First Archive.',fr:'La dernière pièce des Archives premières.'},rarity:'LEGENDARY',symbol:'✧',xp:500}
+ {
+  id:'coin',
+  name:{en:'Ancient Coin',fr:'Pièce antique'},
+  desc:{
+   en:'A small token from a forgotten age.',
+   fr:'Un petit vestige d’une époque oubliée.'
+  },
+  rarity:'COMMON',
+  symbol:'◉',
+  xp:0,
+  origin:{
+   en:'The ruins of the First Kingdom',
+   fr:'Les ruines du Premier Royaume'
+  },
+  lore:{
+   en:'Once used by merchants of a civilization erased from history. Its markings remain undeciphered.',
+   fr:'Autrefois utilisée par les marchands d’une civilisation effacée de l’histoire. Ses inscriptions restent indéchiffrées.'
+  },
+  collection:'forgotten_relics',
+  image:null,
+  equipment:{
+   slot:'accessory',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'shard',
+  name:{en:'Dusk Shard',fr:'Éclat du crépuscule'},
+  desc:{
+   en:'A fragment that catches the last light.',
+   fr:'Un fragment qui capte la dernière lumière.'
+  },
+  rarity:'UNCOMMON',
+  symbol:'✦',
+  xp:50,
+  origin:{
+   en:'The Valley of Dusk',
+   fr:'La Vallée du Crépuscule'
+  },
+  lore:{
+   en:'A fragment of a mysterious stone that glows only when the sun disappears.',
+   fr:'Un fragment d’une pierre mystérieuse qui ne brille qu’à la disparition du soleil.'
+  },
+  collection:'forgotten_relics',
+  image:null,
+  equipment:{
+   slot:'artifact',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'seal',
+  name:{en:'Royal Seal',fr:'Sceau royal'},
+  desc:{
+   en:'The mark of an unnamed dynasty.',
+   fr:'La marque d’une dynastie oubliée.'
+  },
+  rarity:'UNCOMMON',
+  symbol:'❖',
+  xp:100,
+  origin:{
+   en:'The Royal Necropolis',
+   fr:'La Nécropole royale'
+  },
+  lore:{
+   en:'The emblem of a dynasty whose rulers were deliberately removed from every royal record.',
+   fr:'L’emblème d’une dynastie dont les souverains ont été volontairement effacés des archives royales.'
+  },
+  collection:'royal_legacy',
+  image:null,
+  equipment:{
+   slot:'accessory',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'key',
+  name:{en:'Silent Key',fr:'Clé silencieuse'},
+  desc:{
+   en:'It opens a door no map remembers.',
+   fr:'Elle ouvre une porte qu’aucune carte ne connaît.'
+  },
+  rarity:'RARE',
+  symbol:'⚿',
+  xp:150,
+  origin:{
+   en:'The Buried Sanctuary',
+   fr:'Le Sanctuaire enseveli'
+  },
+  lore:{
+   en:'Forged for a hidden chamber beneath the desert. No one remembers who ordered its creation.',
+   fr:'Forgée pour une chambre secrète sous le désert. Personne ne se souvient de celui qui en ordonna la création.'
+  },
+  collection:'forgotten_relics',
+  image:null,
+  equipment:{
+   slot:'accessory',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'lens',
+  name:{en:'Moon Lens',fr:'Lentille lunaire'},
+  desc:{
+   en:'A lens made for seeing beyond.',
+   fr:'Une lentille conçue pour voir au-delà.'
+  },
+  rarity:'RARE',
+  symbol:'◈',
+  xp:200,
+  origin:{
+   en:'The Observatory of Shadows',
+   fr:'L’Observatoire des Ombres'
+  },
+  lore:{
+   en:'Ancient astronomers used it to observe lights that could not be seen with the naked eye.',
+   fr:'Les anciens astronomes l’utilisaient pour observer des lumières invisibles à l’œil nu.'
+  },
+  collection:'astral_relics',
+  image:null,
+  equipment:{
+   slot:'artifact',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'compass',
+  name:{en:'Astral Compass',fr:'Boussole astrale'},
+  desc:{
+   en:'A relic said to point toward forgotten places.',
+   fr:'Une relique qui indiquerait les lieux oubliés.'
+  },
+  rarity:'EPIC',
+  symbol:'✥',
+  xp:250,
+  origin:{
+   en:'The Astral Desert',
+   fr:'Le Désert astral'
+  },
+  lore:{
+   en:'Its needle ignores north and points toward places lost beyond the boundaries of the known world.',
+   fr:'Son aiguille ignore le nord et indique des lieux perdus au-delà des frontières du monde connu.'
+  },
+  collection:'astral_relics',
+  image:null,
+  equipment:{
+   slot:'accessory',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'crown',
+  name:{en:'Forgotten Crown',fr:'Couronne oubliée'},
+  desc:{
+   en:'Its kingdom has vanished from history.',
+   fr:'Son royaume a disparu de l’histoire.'
+  },
+  rarity:'EPIC',
+  symbol:'♕',
+  xp:300,
+  origin:{
+   en:'The Palace of the Last Pharaoh',
+   fr:'Le Palais du Dernier Pharaon'
+  },
+  lore:{
+   en:'A royal crown preserved beneath the sands. Its owner is absent from every surviving chronicle.',
+   fr:'Une couronne royale préservée sous les sables. Son propriétaire ne figure dans aucune chronique conservée.'
+  },
+  collection:'royal_legacy',
+  image:null,
+  equipment:{
+   slot:'head',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'hourglass',
+  name:{en:'Glass of Hours',fr:'Sablier des heures'},
+  desc:{
+   en:'Its sand never falls the same way twice.',
+   fr:'Son sable ne s’écoule jamais deux fois pareil.'
+  },
+  rarity:'LEGENDARY',
+  symbol:'⌛',
+  xp:350,
+  origin:{
+   en:'The Temple of Lost Time',
+   fr:'Le Temple du Temps perdu'
+  },
+  lore:{
+   en:'Legend says its sand was gathered from the final hour of an ancient civilization.',
+   fr:'La légende raconte que son sable fut recueilli durant la dernière heure d’une ancienne civilisation.'
+  },
+  collection:'temporal_relics',
+  image:null,
+  equipment:{
+   slot:'artifact',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'heart',
+  name:{en:'Ember Heart',fr:'Cœur de braise'},
+  desc:{
+   en:'A warm light sealed in ancient stone.',
+   fr:'Une lumière chaude scellée dans la pierre.'
+  },
+  rarity:'LEGENDARY',
+  symbol:'♥',
+  xp:400,
+  origin:{
+   en:'The Furnace of the Deep',
+   fr:'La Forge des Profondeurs'
+  },
+  lore:{
+   en:'A fragment of an ancient power that continues to burn beneath layers of black stone.',
+   fr:'Un fragment d’une puissance ancienne qui continue de brûler sous des couches de pierre noire.'
+  },
+  collection:'primordial_relics',
+  image:null,
+  equipment:{
+   slot:'artifact',
+   stats:{},
+   enabled:false
+  }
+ },
+ {
+  id:'star',
+  name:{en:'Eternal Star',fr:'Étoile éternelle'},
+  desc:{
+   en:'The final piece of the First Archive.',
+   fr:'La dernière pièce des Archives premières.'
+  },
+  rarity:'MYTHIC',
+  symbol:'✧',
+  xp:500,
+  origin:{
+   en:'The First Archive',
+   fr:'Les Archives premières'
+  },
+  lore:{
+   en:'The oldest relic ever recorded. Its true purpose remains unknown, even to the keepers of the Archive.',
+   fr:'La plus ancienne relique jamais répertoriée. Sa véritable fonction reste inconnue, même des gardiens des Archives.'
+  },
+  collection:'primordial_relics',
+  image:null,
+  equipment:{
+   slot:'artifact',
+   stats:{},
+   enabled:false
+  }
+ }
 ];
+
 
 const I18N = {
  en:{season:'SEASON 01 · THE FIRST ARCHIVE',heroTitle:'Your legacy<br><em>starts here.</em>',heroText:'Discover artifacts. Master challenges. Build a collection worth remembering.',startChallenge:'Start today’s challenge',overview:'OVERVIEW',yourProgress:'Your progress',artifacts:'ARTIFACTS',complete:'COMPLETE',featured:'FEATURED',featuredArtifact:'Featured artifact',viewAll:'View all ↗',rare:'RARE',featuredDescription:'A relic said to point toward forgotten places.',theArchive:'THE ARCHIVE',collectionTitle:'Your collection',collectionText:'Ten artifacts. One archive. Every discovery is earned.',archiveProgress:'ARCHIVE PROGRESS',dailyTrial:'DAILY TRIAL',challengeTitle:'The daily challenge',challengeText:'Solve the puzzle to earn XP. One completed challenge per day.',logicTrial:'LOGIC TRIAL',yourQuestion:'YOUR QUESTION',checkAnswer:'Check answer',fairPlay:'Fair play: the answer and reward are fixed. No paid chance mechanics.',identity:'IDENTITY',yourProfile:'Your profile',profileText:'Your progress is saved on this device.',archivist:'New Archivist',foundingMember:'FOUNDING MEMBER · SEASON 01',nextLevel:'NEXT LEVEL',yourData:'Your data',dataText:'This prototype stores progress locally in your browser. No account or server is connected.',resetProgress:'Reset progress',navHome:'Home',navCollection:'Archive',navChallenge:'Challenge',navProfile:'Profile',streak:'challenge completed',days:'challenges completed',locked:'LOCKED',unlockAt:'Unlock at',correct:'Correct. +50 XP added to your archive.',wrong:'Not quite. Try again.',alreadyDone:'Today’s challenge is complete. Come back tomorrow.',choose:'Choose an answer first.',resetConfirm:'Reset all local VAULT progress?',resetDone:'Your progress has been reset.',level:'LEVEL',levelUp:'Level up!',challengeDone:'Completed today',notYet:'Not unlocked yet'},
