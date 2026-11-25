@@ -41,6 +41,39 @@ function freshState(){
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
 function t(key){return I18N[language][key]??key}
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+
+/* VAULT 1.4 — STREAK SYSTEM */
+
+function getVaultStreak14(){
+ const completed=[...new Set(state.completedDays)].sort();
+
+ if(completed.length===0)return 0;
+
+ const lastDate=new Date(completed[completed.length-1]+"T12:00:00");
+ const today=new Date(todayKey()+"T12:00:00");
+
+ const difference=Math.round((today-lastDate)/86400000);
+
+ if(difference>1)return 0;
+
+ let streak=1;
+
+ for(let i=completed.length-1;i>0;i--){
+  const current=new Date(completed[i]+"T12:00:00");
+  const previous=new Date(completed[i-1]+"T12:00:00");
+
+  const days=Math.round((current-previous)/86400000);
+
+  if(days===1){
+   streak++;
+  }else{
+   break;
+  }
+ }
+
+ return streak;
+}
+
 function level(){return Math.floor(state.xp/100)+1}
 function unlockedCount(){return state.unlocked.length}
 
