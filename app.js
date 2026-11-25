@@ -2343,45 +2343,6 @@ render();
 
     createPanel(profile);
 
-      // VAULT 1.4 — Streak display
-createStreakPanel14(profile);
-
-const streak=getVaultStreak14();
-const milestones=[3,7,14,30];
-
-const nextMilestone=milestones.find(value=>value>streak);
-const previousMilestone=milestones
- .filter(value=>value<=streak)
- .pop()||0;
-
-const progress=nextMilestone
- ?Math.min(100,Math.round(
-  (streak-previousMilestone)/
-  (nextMilestone-previousMilestone)*100
- ))
- :100;
-
-const streakLang=lang==="fr"?"fr":"en";
-
-document.getElementById("vaultStreakTitle14").textContent=
- streakLang==="fr"?"Série de défis":"Challenge Streak";
-
-document.getElementById("vaultStreakCount14").textContent=
- streak+" "+(streakLang==="fr"?"jours":"days");
-
-document.getElementById("vaultStreakNext14").textContent=
- nextMilestone
- ?(streakLang==="fr"
-  ?"Prochain palier : "+nextMilestone+" jours"
-  :"Next milestone: "+nextMilestone+" days")
- :(streakLang==="fr"?"Tous les paliers atteints !":"All milestones reached!");
-
-const streakBar=document.getElementById("vaultStreakProgress14");
-
-if(streakBar){
- streakBar.style.width=progress+"%";
-}
-
     // Textes du profil
     document.getElementById("vaultTitlesHeading082").textContent =
       lang === "fr" ? "Titres de joueur" : "Player Titles";
