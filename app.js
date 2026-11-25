@@ -2174,6 +2174,43 @@ function updateProfile(){
       : TITLES.find(t => t.id === id) || DEFAULT_TITLE;
   }
 
+  function createStreakPanel14(profile){
+ if(document.getElementById("vaultStreak14"))return;
+
+ profile.insertAdjacentHTML("beforeend",`
+  <div id="vaultStreak14" style="
+   margin-top:20px;
+   padding:16px;
+   border:1px solid rgba(245,158,11,.35);
+   border-radius:15px;
+   background:rgba(245,158,11,.07);
+  ">
+   <div style="font-size:16px;font-weight:800;">
+    🔥 <span id="vaultStreakTitle14"></span>
+   </div>
+
+   <div id="vaultStreakCount14" style="
+    font-size:30px;font-weight:900;
+    color:#f59e0b;margin-top:12px;
+   "></div>
+
+   <div id="vaultStreakNext14" style="
+    font-size:11px;opacity:.7;margin-top:5px;
+   "></div>
+
+   <div style="
+    height:7px;background:rgba(255,255,255,.1);
+    border-radius:10px;overflow:hidden;margin-top:12px;
+   ">
+    <div id="vaultStreakProgress14" style="
+     height:100%;width:0%;
+     background:#f59e0b;border-radius:10px;
+    "></div>
+   </div>
+  </div>
+ `);
+}
+  
   function createPanel(profile) {
     if (document.getElementById("vaultTitles082")) return;
 
@@ -2305,6 +2342,45 @@ render();
     const selected = getTitle(s.selectedVaultTitle);
 
     createPanel(profile);
+
+      // VAULT 1.4 — Streak display
+createStreakPanel14(profile);
+
+const streak=getVaultStreak14();
+const milestones=[3,7,14,30];
+
+const nextMilestone=milestones.find(value=>value>streak);
+const previousMilestone=milestones
+ .filter(value=>value<=streak)
+ .pop()||0;
+
+const progress=nextMilestone
+ ?Math.min(100,Math.round(
+  (streak-previousMilestone)/
+  (nextMilestone-previousMilestone)*100
+ ))
+ :100;
+
+const streakLang=lang==="fr"?"fr":"en";
+
+document.getElementById("vaultStreakTitle14").textContent=
+ streakLang==="fr"?"Série de défis":"Challenge Streak";
+
+document.getElementById("vaultStreakCount14").textContent=
+ streak+" "+(streakLang==="fr"?"jours":"days");
+
+document.getElementById("vaultStreakNext14").textContent=
+ nextMilestone
+ ?(streakLang==="fr"
+  ?"Prochain palier : "+nextMilestone+" jours"
+  :"Next milestone: "+nextMilestone+" days")
+ :(streakLang==="fr"?"Tous les paliers atteints !":"All milestones reached!");
+
+const streakBar=document.getElementById("vaultStreakProgress14");
+
+if(streakBar){
+ streakBar.style.width=progress+"%";
+}
 
     // Textes du profil
     document.getElementById("vaultTitlesHeading082").textContent =
