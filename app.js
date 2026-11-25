@@ -2590,3 +2590,365 @@ render();
 
  render();
 })();
+
+
+/* =========================================
+   VAULT — DAILY REWARDS 1.0
+========================================= */
+
+(()=>{
+ const PANEL_ID="vaultDailyRewards10";
+ const STYLE_ID="vaultDailyRewards10Styles";
+
+ function todayKey(){
+  const d=new Date();
+  return [
+   d.getFullYear(),
+   String(d.getMonth()+1).padStart(2,"0"),
+   String(d.getDate()).padStart(2,"0")
+  ].join("-");
+ }
+
+ function dayNumber(date){
+  const parts=date.split("-").map(Number);
+  return Math.floor(Date.UTC(parts[0],parts[1]-1,parts[2])/86400000);
+ }
+
+ function rewardForDay(day){
+  if(day===1)return 15;
+  if(day===2)return 20;
+  if(day===3)return 30;
+  if(day===7)return 75;
+  if(day===14)return 100;
+  if(day===30)return 200;
+  if(day>=4&&day<=6)return 35;
+  if(day>=8&&day<=13)return 40;
+  if(day>=15&&day<=29)return 50;
+  return 50;
+ }
+
+ function dailyData(){
+  if(!state.vaultDaily10){
+   state.vaultDaily10={
+    lastClaimDate:"",
+    streak:0,
+    totalClaims:0,
+    lastReward:0,
+    lastClaimStreak:0
+   };
+  }
+  return state.vaultDaily10;
+ }
+
+ function addStyles(){
+  if(document.getElementById(STYLE_ID))return;
+
+  const style=document.createElement("style");
+  style.id=STYLE_ID;
+  style.textContent=`
+   #${PANEL_ID}{
+    background:linear-gradient(135deg,#171c2b,#30213d);
+    border:1px solid #806acb;
+    border-radius:16px;
+    padding:20px;
+    margin:0 0 22px;
+    color:white;
+   }
+   #${PANEL_ID} .dr-heading{
+    color:#d4c5ff;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2px;
+    margin-bottom:17px;
+   }
+   #${PANEL_ID} .dr-main{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:17px;
+   }
+   #${PANEL_ID} .dr-icon{
+    width:58px;
+    height:58px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    border-radius:14px;
+    background:#3a2b55;
+    border:1px solid #806acb;
+    font-size:29px;
+   }
+   #${PANEL_ID} .dr-title{
+    font-size:18px;
+    font-weight:800;
+   }
+   #${PANEL_ID} .dr-description{
+    color:#b9b5cc;
+    font-size:11px;
+    margin-top:5px;
+   }
+   #${PANEL_ID} .dr-stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+    margin-bottom:17px;
+   }
+   #${PANEL_ID} .dr-stat{
+    background:#0c1220;
+    border:1px solid #30394e;
+    border-radius:9px;
+    padding:12px;
+    text-align:center;
+   }
+   #${PANEL_ID} .dr-stat strong{
+    display:block;
+    color:#c2a5ff;
+    font-size:20px;
+    margin-bottom:4px;
+   }
+   #${PANEL_ID} .dr-stat span{
+    color:#aebbd2;
+    font-size:9px;
+    letter-spacing:1px;
+   }
+   #${PANEL_ID} .dr-days{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:5px;
+    margin-bottom:17px;
+   }
+   #${PANEL_ID} .dr-day{
+    min-width:0;
+    padding:9px 2px;
+    text-align:center;
+    background:#0c1220;
+    border:1px solid #30394e;
+    border-radius:8px;
+   }
+   #${PANEL_ID} .dr-day.active{
+    background:#3a2b55;
+    border-color:#a58be9;
+   }
+   #${PANEL_ID} .dr-day strong{
+    display:block;
+    font-size:13px;
+    color:#fff;
+   }
+   #${PANEL_ID} .dr-day span{
+    display:block;
+    font-size:8px;
+    color:#b9b5cc;
+    margin-top:5px;
+   }
+   #${PANEL_ID} .dr-button{
+    width:100%;
+    padding:13px;
+    border-radius:8px;
+    border:1px solid #a58be9;
+    background:#49356b;
+    color:white;
+    font-weight:800;
+    cursor:pointer;
+    font-size:12px;
+   }
+   #${PANEL_ID} .dr-button:disabled{
+    opacity:.55;
+    cursor:default;
+   }
+   #${PANEL_ID} .dr-message{
+    text-align:center;
+    color:#c2b6e8;
+    font-size:10px;
+    margin-top:10px;
+    min-height:14px;
+   }
+  `;
+  document.head.appendChild(style);
+ }
+
+ function createPanel(){
+  const view=document.getElementById("profileView");
+  if(!view||document.getElementById(PANEL_ID))return;
+
+  const panel=document.createElement("section");
+  panel.id=PANEL_ID;
+
+  panel.innerHTML=`
+   <div class="dr-heading" id="drHeading"></div>
+
+   <div class="dr-main">
+    <div class="dr-icon">🎁</div>
+    <div>
+     <div class="dr-title" id="drTitle"></div>
+     <div class="dr-description" id="drDescription"></div>
+    </div>
+   </div>
+
+   <div class="dr-stats">
+    <div class="dr-stat">
+     <strong id="drStreak">0</strong>
+     <span id="drStreakLabel"></span>
+    </div>
+    <div class="dr-stat">
+     <strong id="drTotal">0</strong>
+     <span id="drTotalLabel"></span>
+    </div>
+   </div>
+
+   <div class="dr-days" id="drDays"></div>
+
+   <button class="dr-button" id="drClaim"></button>
+   <div class="dr-message" id="drMessage"></div>
+  `;
+
+  const profile=document.getElementById("vaultPlayerProfile");
+
+  if(profile){
+   profile.insertAdjacentElement("afterend",panel);
+  }else{
+   view.prepend(panel);
+  }
+
+  document.getElementById("drClaim").onclick=claimReward;
+ }
+
+ function setText(id,value){
+  const element=document.getElementById(id);
+  if(element&&element.textContent!==String(value)){
+   element.textContent=value;
+  }
+ }
+
+ function claimReward(){
+  const data=dailyData();
+  const today=todayKey();
+
+  if(data.lastClaimDate===today)return;
+
+  if(data.lastClaimDate){
+   const difference=dayNumber(today)-dayNumber(data.lastClaimDate);
+
+   data.streak=difference===1?data.streak+1:1;
+  }else{
+   data.streak=1;
+  }
+
+  const reward=rewardForDay(data.streak);
+
+  data.lastClaimDate=today;
+  data.lastReward=reward;
+  data.lastClaimStreak=data.streak;
+  data.totalClaims++;
+
+  state.xp=(Number(state.xp)||0)+reward;
+
+  saveState();
+  render();
+
+  showToast(
+   language==="fr"
+    ?"Récompense quotidienne : +"+reward+" XP !"
+    :"Daily reward: +"+reward+" XP!"
+  );
+ }
+
+ function updatePanel(){
+  const panel=document.getElementById(PANEL_ID);
+  if(!panel)return;
+
+  const lang=language==="fr"?"fr":"en";
+  const data=dailyData();
+  const today=todayKey();
+  const claimed=data.lastClaimDate===today;
+
+  const currentStreak=claimed
+   ?data.streak
+   :(data.lastClaimDate&&dayNumber(today)-dayNumber(data.lastClaimDate)===1
+     ?data.streak+1:1);
+
+  const nextReward=rewardForDay(currentStreak);
+
+  setText("drHeading",
+   lang==="fr"?"🎁 RÉCOMPENSES QUOTIDIENNES":"🎁 DAILY REWARDS");
+
+  setText("drTitle",
+   lang==="fr"?"Votre récompense vous attend":"Your reward is waiting");
+
+  setText("drDescription",
+   lang==="fr"
+    ?"Revenez chaque jour pour faire grandir votre série."
+    :"Return every day to build your streak.");
+
+  setText("drStreak",data.streak);
+  setText("drTotal",data.totalClaims);
+
+  setText("drStreakLabel",
+   lang==="fr"?"JOURS CONSÉCUTIFS":"DAILY STREAK");
+
+  setText("drTotalLabel",
+   lang==="fr"?"RÉCOMPENSES RÉCLAMÉES":"REWARDS CLAIMED");
+
+  const days=document.getElementById("drDays");
+
+  const milestones=[1,2,3,4,5,6,7];
+
+  const daysHTML=milestones.map(day=>{
+   const active=currentStreak>=day;
+   const reward=rewardForDay(day);
+
+   return `
+    <div class="dr-day ${active?"active":""}">
+     <strong>${day}</strong>
+     <span>+${reward} XP</span>
+    </div>
+   `;
+  }).join("");
+
+  if(days&&days.innerHTML!==daysHTML){
+   days.innerHTML=daysHTML;
+  }
+
+  const button=document.getElementById("drClaim");
+
+  if(button){
+   button.disabled=claimed;
+   button.textContent=claimed
+    ?(lang==="fr"?"✓ RÉCOMPENSE RÉCUPÉRÉE":"✓ REWARD CLAIMED")
+    :(lang==="fr"?"RÉCUPÉRER +"+nextReward+" XP":"CLAIM +"+nextReward+" XP");
+  }
+
+  setText("drMessage",
+   claimed
+    ?(lang==="fr"
+      ?"Revenez demain pour votre prochaine récompense."
+      :"Come back tomorrow for your next reward.")
+    :(lang==="fr"
+      ?"Jour "+currentStreak+" de votre prochaine série"
+      :"Day "+currentStreak+" of your next streak"));
+ }
+
+ addStyles();
+ createPanel();
+ dailyData();
+
+ const previousRender=render;
+
+ render=function(){
+  previousRender();
+  createPanel();
+  updatePanel();
+ };
+
+ const observer=new MutationObserver(()=>{
+  createPanel();
+  updatePanel();
+ });
+
+ observer.observe(document.body,{
+  childList:true,
+  subtree:true
+ });
+
+ render();
+})();
