@@ -3,3 +3,95 @@
 @media(max-width:520px){.app-shell{padding-left:15px;padding-right:15px}.hero{min-height:350px;padding:24px 20px;align-items:flex-start}.hero-copy{max-width:250px}.hero h1{font-size:37px}.vault-art{right:-100px;top:125px;transform:scale(.8);opacity:.52}.hero-copy>.muted{max-width:235px}.stats-grid{gap:7px}.stat-card{padding:12px;min-height:96px}.stat-value{font-size:22px}.stat-label{font-size:7px}.section-heading h2{font-size:21px}.settings-card{align-items:flex-start;flex-direction:column}.artifact-grid{gap:8px}.artifact-card{padding:12px}.page-intro h1{font-size:34px}}
 
 .sequence-rule{color:var(--muted);font-size:12px;line-height:1.5;margin:-10px 0 18px}.number-sequence{display:flex;align-items:center;justify-content:center;gap:clamp(5px,2vw,13px);margin:0 auto 15px;padding:13px 9px;border:1px solid #8e754744;border-radius:12px;background:linear-gradient(120deg,#d8bb7a0b,#ffffff03);max-width:430px}.number-sequence span,.number-sequence strong{font:600 clamp(18px,5vw,25px) 'Playfair Display',serif;color:var(--gold2);font-variant-numeric:tabular-nums}.number-sequence i{font-style:normal;color:#8e7547;font-size:12px}.number-sequence strong{color:var(--gold);border:1px dashed #9c824e;border-radius:7px;padding:3px 9px}.answer-prompt{font-size:11px;color:var(--muted);margin:0 0 10px}
+
+/* VAULT ARTEFACTS 2.0 — RARITY SYSTEM */
+
+.artifact-card {
+ transition:border-color .25s, box-shadow .25s, transform .25s;
+}
+
+/* COMMON — Pierre ancienne */
+.rarity-common .rarity,
+.rarity-card-common .rarity {
+ color:#aaa9a3;
+}
+.artifact-card.rarity-card-common:not(.locked) {
+ border-color:#77766b66;
+}
+.artifact-card.rarity-card-common .artifact-symbol {
+ border-color:#77766b;
+ background:radial-gradient(circle,#41413d,#22231f);
+ color:#d0cec3;
+}
+
+/* UNCOMMON — Vert ancien */
+.rarity-uncommon .rarity,
+.rarity-card-uncommon .rarity {
+ color:#91c49a;
+}
+.artifact-card.rarity-card-uncommon:not(.locked) {
+ border-color:#6eaa7966;
+}
+.artifact-card.rarity-card-uncommon .artifact-symbol {
+ border-color:#6eaa79;
+ background:radial-gradient(circle,#304b36,#1b2820);
+ color:#b5dfb9;
+}
+
+/* RARE — Bleu mystique */
+.rarity-rare .rarity,
+.rarity-card-rare .rarity {
+ color:#83b9e8;
+}
+.artifact-card.rarity-card-rare:not(.locked) {
+ border-color:#579bd866;
+}
+.artifact-card.rarity-card-rare .artifact-symbol {
+ border-color:#579bd8;
+ background:radial-gradient(circle,#294765,#172532);
+ color:#a9d8ff;
+}
+
+/* EPIC — Violet */
+.rarity-epic .rarity,
+.rarity-card-epic .rarity {
+ color:#c19aef;
+}
+.artifact-card.rarity-card-epic:not(.locked) {
+ border-color:#a47bd866;
+}
+.artifact-card.rarity-card-epic .artifact-symbol {
+ border-color:#a47bd8;
+ background:radial-gradient(circle,#49315f,#251b31);
+ color:#d9bdff;
+}
+
+/* LEGENDARY — Or */
+.rarity-legendary .rarity,
+.rarity-card-legendary .rarity {
+ color:#f0c66f;
+}
+.artifact-card.rarity-card-legendary:not(.locked) {
+ border-color:#d8aa4f88;
+ box-shadow:0 8px 25px #d8aa4f0d;
+}
+.artifact-card.rarity-card-legendary .artifact-symbol {
+ border-color:#d8aa4f;
+ background:radial-gradient(circle,#604a25,#2d2417);
+ color:#ffe1a0;
+}
+
+/* MYTHIC — Rouge et or */
+.rarity-mythic .rarity,
+.rarity-card-mythic .rarity {
+ color:#ff987e;
+}
+.artifact-card.rarity-card-mythic:not(.locked) {
+ border-color:#d66b5188;
+ box-shadow:0 8px 30px #d66b5118;
+}
+.artifact-card.rarity-card-mythic .artifact-symbol {
+ border-color:#d66b51;
+ background:radial-gradient(circle,#71372c,#321d1b);
+ color:#ffd0a0;
+}
